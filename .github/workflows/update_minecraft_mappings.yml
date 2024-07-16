@@ -28,11 +28,11 @@ jobs:
         import json
         import os
         import logging
+        from datetime import datetime
 
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
 
         def get_json(url):
-            logging.info(f"Fetching JSON from {url}")
             response = requests.get(url)
             response.raise_for_status()
             return response.json()
@@ -44,25 +44,38 @@ jobs:
         logging.info(f"Fetching version manifest from {manifest_url}")
         manifest = get_json(manifest_url)
 
+        total_versions = len(manifest['versions'])
+        processed_versions = 0
+        updated_versions = 0
+
+        start_time = datetime.now()
+
         for version in manifest['versions']:
             version_id = version['id']
-            logging.info(f"Processing version {version_id}")
+            processed_versions += 1
             
             version_data = get_json(version['url'])
             
             if 'downloads' in version_data and 'client_mappings' in version_data['downloads']:
                 mapping_url = version_data['downloads']['client_mappings']['url']
-                logging.info(f"Fetching mapping for version {version_id} from {mapping_url}")
                 mapping_data = requests.get(mapping_url).text
                 
                 filename = os.path.join(mappings_dir, f"{version_id}.json")
-                with open(filename, 'w') as f:
-                    f.write(mapping_data)
-                logging.info(f"Saved mapping for version {version_id} to {filename}")
+                
+                if not os.path.exists(filename) or open(filename, 'r').read() != mapping_data:
+                    with open(filename, 'w') as f:
+                        f.write(mapping_data)
+                    updated_versions += 1
+                    logging.info(f"Updated mapping for version {version_id} - {processed_versions}/{total_versions} ({processed_versions/total_versions*100:.2f}% complete)")
             else:
-                logging.warning(f"No client mappings found for version {version_id}")
+                logging.warning(f"No client mappings found for version {version_id} - {processed_versions}/{total_versions} ({processed_versions/total_versions*100:.2f}% complete)")
 
-        logging.info("Finished processing all versions")
+        end_time = datetime.now()
+        duration = end_time - start_time
+
+        logging.info(f"\nProcess completed in {duration}")
+        logging.info(f"Total versions processed: {processed_versions}")
+        logging.info(f"Versions updated: {updated_versions}")
         EOF
 
     - name: Check for changes
@@ -81,9 +94,7 @@ jobs:
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add minecraft_mappings
         git commit -m "Update Minecraft client mappings"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        git push https://${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref }}
 
     - name: Upload mappings as artifact
       if: steps.check_changes.outputs.changes_exist == 'true'
