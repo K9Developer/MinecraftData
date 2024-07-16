@@ -33,7 +33,7 @@ jobs:
             return response.json()
         
         # Fetch version manifest
-        manifest = get_json('https://launcharmeta.mojang.com/mc/game/version_manifest.json')
+        manifest = get_json('https://launchermeta.mojang.com/mc/game/version_manifest.json')
         
         mappings = {}
         
