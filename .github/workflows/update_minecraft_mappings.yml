@@ -78,29 +78,7 @@ jobs:
         logging.info(f"Versions updated: {updated_versions}")
         EOF
 
-    - name: Check for changes
-      id: check_changes
-      run: |
-        if [ -d "minecraft_mappings" ] && [ "$(ls -A minecraft_mappings)" ]; then
-          echo "::set-output name=changes_exist::true"
-        else
-          echo "::set-output name=changes_exist::false"
-        fi
-
-    - name: Commit and push if changed
-      if: steps.check_changes.outputs.changes_exist == 'true'
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add minecraft_mappings
-        git commit -m "Update Minecraft client mappings"
-        git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
-        git push
-      env:
-        PAT: ${{ secrets.PAT }}
-
     - name: Upload mappings as artifact
-      if: steps.check_changes.outputs.changes_exist == 'true'
       uses: actions/upload-artifact@v2
       with:
         name: minecraft-mappings
