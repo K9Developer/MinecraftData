@@ -1,18 +1,23 @@
-name: Update Minecraft Client Mappings
+name: Daily Minecraft Deobfuscation
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight UTC
-  workflow_dispatch:  # Allow manual triggers
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  update-mappings:
+  deobfuscate:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+        fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
@@ -21,65 +26,22 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Fetch and process mappings
+    - name: Create data directory
+      run: mkdir -p data
+
+    - name: Run deobfuscation script
       run: |
-        python - <<EOF
-        import requests
-        import json
-        import os
-        import logging
-        from datetime import datetime
+        cat << EOT > deobfuscate.py
+        # Your Python script here (same as before)
+        EOT
+        python deobfuscate.py
 
-        logging.basicConfig(level=logging.INFO, format='%(message)s')
-
-        def get_json(url):
-            response = requests.get(url)
-            response.raise_for_status()
-            return response.json()
-
-        mappings_dir = 'minecraft_mappings'
-        os.makedirs(mappings_dir, exist_ok=True)
-
-        manifest_url = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
-        logging.info(f"Fetching version manifest from {manifest_url}")
-        manifest = get_json(manifest_url)
-
-        total_versions = len(manifest['versions'])
-        processed_versions = 0
-        updated_versions = 0
-
-        start_time = datetime.now()
-
-        for version in manifest['versions']:
-            version_id = version['id']
-            processed_versions += 1
-            
-            version_data = get_json(version['url'])
-            
-            if 'downloads' in version_data and 'client_mappings' in version_data['downloads']:
-                mapping_url = version_data['downloads']['client_mappings']['url']
-                mapping_data = requests.get(mapping_url).text
-                
-                filename = os.path.join(mappings_dir, f"{version_id}.json")
-                
-                if not os.path.exists(filename) or open(filename, 'r').read() != mapping_data:
-                    with open(filename, 'w') as f:
-                        f.write(mapping_data)
-                    updated_versions += 1
-                    logging.info(f"Updated mapping for version {version_id} - {processed_versions}/{total_versions} ({processed_versions/total_versions*100:.2f}% complete)")
-            else:
-                logging.warning(f"No client mappings found for version {version_id} - {processed_versions}/{total_versions} ({processed_versions/total_versions*100:.2f}% complete)")
-
-        end_time = datetime.now()
-        duration = end_time - start_time
-
-        logging.info(f"\nProcess completed in {duration}")
-        logging.info(f"Total versions processed: {processed_versions}")
-        logging.info(f"Versions updated: {updated_versions}")
-        EOF
-
-    - name: Upload mappings as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: minecraft-mappings
-        path: minecraft_mappings/
+    - name: Commit and push changes
+      env:
+        PAT: ${{ secrets.PAT }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/
+        git commit -m "Update deobfuscation data" -a || echo "No changes to commit"
+        git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
