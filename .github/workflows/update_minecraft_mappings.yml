@@ -32,7 +32,118 @@ jobs:
     - name: Run deobfuscation script
       run: |
         cat << EOT > deobfuscate.py
-        # Your Python script here (same as before)
+        import requests
+        import json
+        import re
+        import time
+        import os
+        
+        def fetch(url):
+            return requests.get(url).text
+        
+        def fetch_json(url):
+            return requests.get(url).json()
+        
+        def get_deobfs(version, mc_ver):
+            if version is None:
+                return
+        
+            version_data = fetch_json(version["url"])
+        
+            if version_data["downloads"].get("client_mappings") == None:
+                with open(f"data/{mc_ver}.json", "w") as f:
+                    f.write(json.dumps({}, indent=4))
+                return
+        
+            mappings_url = version_data["downloads"]["client_mappings"]["url"]
+        
+            mapping_data = fetch(mappings_url).split("\n")
+            tiny_mapping = fetch(f"https://raw.githubusercontent.com/FabricMC/intermediary/master/mappings/{mc_ver}.tiny").split("\n")[1:]
+        
+            deobfs = {}
+            class_mappings = {}
+        
+            # Prepare class mappings in a single pass
+            for line in mapping_data:
+                if not line.startswith(" "):
+                    parts = line.split(" ")
+                    class_code = parts[-1][:-1]
+                    class_name = parts[0].split(".")[-1]
+                    class_mappings[class_code] = class_name
+        
+            total_lines = len(tiny_mapping)
+            mapping_data_dict = {}
+            curr_class_code = None
+        
+            # Prepare a dictionary for quick lookups
+            for line in mapping_data:
+                if line.startswith(" "):
+                    if curr_class_code:
+                        if curr_class_code not in mapping_data_dict:
+                            mapping_data_dict[curr_class_code] = []
+                        mapping_data_dict[curr_class_code].append(line.strip())
+                else:
+                    curr_class_code = line.split(" ")[-1][:-1]
+        
+            for i, tiny_l in enumerate(tiny_mapping):
+                if not tiny_l:
+                    continue
+        
+                if tiny_l.startswith("CLASS"):
+                    _type, code, data = tiny_l.split("\t")
+                    obf = data.split("/")[-1]
+                    deobfs[obf] = class_mappings.get(code, obf)
+                else:
+                    elems = re.split(r"\s+", tiny_l)
+        
+                    if len(elems) < 5:
+                        continue
+        
+                    class_code = elems[1]
+                    code = elems[3]
+                    obf = elems[4]
+        
+                    if class_code in mapping_data_dict:
+                        for line in mapping_data_dict[class_code]:
+                            if line.endswith(f' {code}'):
+                                deobfs[obf] = re.sub(r"\(.*?\)", "", line.strip().split(" ")[1])
+                                break
+            
+            print(data/{mc_ver}.json)
+            with open(f"data/{mc_ver}.json", "w") as f:
+                f.write(json.dumps(deobfs, indent=4))
+        
+        
+        def main():
+            versions_url = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+            versions = fetch_json(versions_url)
+            total_versions = len(versions["versions"])
+        
+            print(f"Total versions: {total_versions}")
+        
+            for ind, version in enumerate(versions["versions"]):
+                mc_ver = version["id"]
+        
+                # Check if file already exists
+                if os.path.exists(f"data/{mc_ver}.json"):
+                    print(f"Skipping {mc_ver} ({ind + 1}/{total_versions}), already exists")
+                    continue
+        
+                for _ in range(5):
+                    try:
+                        get_deobfs(version, mc_ver)
+                        break
+                    except Exception as e:
+                        print(f"Failed to process {mc_ver}, retrying in 5 seconds | {e}")
+                        time.sleep(3)
+                else:
+                    print(f"Failed to process {mc_ver} after 5 retries")
+        
+                print(f"Processed {mc_ver} ({ind + 1}/{total_versions}), Progress: {((ind + 1) / total_versions) * 100:.2f}%")
+        
+        
+        main()
+        print(f"Finished!")
         EOT
         python deobfuscate.py
 
