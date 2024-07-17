@@ -32,6 +32,7 @@ jobs:
     - name: Run deobfuscation script
       run: |
         cat << EOT > deobfuscate.py
+        import sys
         import requests
         import json
         import re
@@ -134,7 +135,7 @@ jobs:
                         get_deobfs(version, mc_ver)
                         break
                     except Exception as e:
-                        print(f"Failed to process {mc_ver}, retrying in 5 seconds | {e}")
+                        print(f"Failed to process {mc_ver}, retrying in 5 seconds | {e} | Line number: {sys.exc_info()[-1].tb_lineno}")
                         time.sleep(3)
                 else:
                     print(f"Failed to process {mc_ver} after 5 retries")
