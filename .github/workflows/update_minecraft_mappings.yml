@@ -110,7 +110,6 @@ jobs:
                                 deobfs[obf] = re.sub(r"\(.*?\)", "", line.strip().split(" ")[1])
                                 break
             
-            print(data/{mc_ver}.json)
             with open(f"data/{mc_ver}.json", "w") as f:
                 f.write(json.dumps(deobfs, indent=4))
         
@@ -131,12 +130,12 @@ jobs:
                     continue
         
                 for _ in range(5):
-                    #try:
+                    try:
                         get_deobfs(version, mc_ver)
                         break
-                    #except Exception as e:
-                    #    print(f"Failed to process {mc_ver}, retrying in 5 seconds | {e} | Line number: {sys.exc_info()[-1].tb_lineno}")
-                    #    time.sleep(3)
+                    except Exception as e:
+                        print(f"Failed to process {mc_ver}, retrying in 5 seconds | {e} | Line number: {sys.exc_info()[-1].tb_lineno}")
+                        time.sleep(3)
                 else:
                     print(f"Failed to process {mc_ver} after 5 retries")
         
