@@ -26,8 +26,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Create data directory
-      run: mkdir -p data
+    - name: Create obf_mappings directory
+      run: mkdir -p obf_mappings
 
     - name: Run deobfuscation script
       run: |
@@ -52,7 +52,7 @@ jobs:
             version_data = fetch_json(version["url"])
         
             if version_data["downloads"].get("client_mappings") == None:
-                with open(f"data/{mc_ver}.json", "w") as f:
+                with open(f"obf_mappings/{mc_ver}.json", "w") as f:
                     f.write(json.dumps({}, indent=4))
                 return
         
@@ -110,7 +110,7 @@ jobs:
                                 deobfs[obf] = re.sub(r"\(.*?\)", "", line.strip().split(" ")[1])
                                 break
             
-            with open(f"data/{mc_ver}.json", "w") as f:
+            with open(f"obf_mappings/{mc_ver}.json", "w") as f:
                 f.write(json.dumps(deobfs, indent=4))
         
         
@@ -125,7 +125,7 @@ jobs:
                 mc_ver = version["id"]
         
                 # Check if file already exists
-                if os.path.exists(f"data/{mc_ver}.json"):
+                if os.path.exists(f"obf_mappings/{mc_ver}.json"):
                     print(f"Skipping {mc_ver} ({ind + 1}/{total_versions}), already exists")
                     continue
         
@@ -153,6 +153,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add data/
+        git add obf_mappings/
         git commit -m "Update deobfuscation data" -a || echo "No changes to commit"
         git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
