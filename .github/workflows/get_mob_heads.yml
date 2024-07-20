@@ -28,7 +28,7 @@ jobs:
         pip install beautifulsoup4
 
     - name: Create mobs directory
-      run: mkdir -p mobs
+      run: mkdir -p mob_heads
 
     - name: Run heads script
       run: |
@@ -70,13 +70,13 @@ jobs:
                 if mob == "iron_golem_(naturally_spawned)": mob = "iron_golem"
                 if mob in bad: continue
         
-                if os.path.exists(f"mobs/{mob}.png"):
+                if os.path.exists(f"mob_heads/{mob}.png"):
                   continue
 
                 print(f"Processed {mob}")
         
                 # Write to file the image
-                with open(f"mobs/{mob}.png", "wb") as f:
+                with open(f"mob_heads/{mob}.png", "wb") as f:
                   f.write(requests.get(mob_url).content)
         EOT
         python get_heads.py
@@ -87,6 +87,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add mobs/
+        git add mob_heads/
         git commit -m "Update heads data" -a || echo "No changes to commit"
         git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
