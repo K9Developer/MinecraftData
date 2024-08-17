@@ -1,0 +1,249 @@
+name: Daily Minecraft Mob Heads
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  get_heads:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+        pip install aiohttp
+        pip install beautifulsoup4
+        pip install Pillow
+
+    - name: Create items directory
+      run: mkdir -p items
+
+    - name: Run items script
+      run: |
+        cat << EOT > get_heads.py
+        import asyncio
+        import aiohttp
+        from bs4 import BeautifulSoup
+        import re
+        from PIL import Image
+        import io
+        import os
+        import json
+        import time
+        
+        # Global variables
+        OUTPUT_FOLDER = "items"
+        METADATA_FILE = f"{OUTPUT_FOLDER}/metadata.json"
+        sprite_image = None
+        processed_items = set()
+        total_items = 0
+        successful_items = 0
+        failed_items = 0
+        
+        async def fetch(session, url, retries=3):
+            for _ in range(retries):
+                try:
+                    async with session.get(url) as response:
+                        return await response.text()
+                except Exception as e:
+                    print(f"Error fetching {url}: {e}")
+                    await asyncio.sleep(5)
+            return None
+        
+        async def download_image(session, url, retries=3):
+            for _ in range(retries):
+                try:
+                    async with session.get(url) as response:
+                        return await response.read()
+                except Exception as e:
+                    print(f"Error downloading image {url}: {e}")
+                    await asyncio.sleep(5)
+            return None
+        
+        async def process_item(session, data):
+            global total_items, successful_items, failed_items
+            total_items += 1
+        
+            if data["url"] in processed_items:
+                print(f"Skipping already processed item: {data['name']}")
+                return []
+        
+            html = await fetch(session, data["url"])
+            if not html:
+                failed_items += 1
+                return []
+        
+            soup = BeautifulSoup(html, "html.parser")
+            
+            tables = soup.find_all("table", class_="wikitable")
+            if not tables:
+                failed_items += 1
+                return []
+        
+            data_table = None
+            for table in tables:
+                prev_sibling = table.find_previous_sibling()
+                if prev_sibling and prev_sibling.name == 'p' and prev_sibling.text.strip() == "Java Edition:":
+                    rows = table.find_all("tr")
+                    if rows:
+                        headers = rows[0].find_all(["th", "td"])
+                        if len(headers) >= 2 and headers[0].text.strip() == "Name" and headers[1].text.strip() == "Identifier":
+                            data_table = table
+                            break
+            
+            if not data_table:
+                failed_items += 1
+                return []
+        
+            results = []
+            for index, item_row in enumerate(data_table.find_all("tr")):
+                if index == 0:
+                    continue
+        
+                cols = item_row.find_all("td")
+                img_span = cols[0].find("span")
+                
+                if img_span:
+                    style = img_span.get("style", "")
+                    bg_image_url = re.search(r'url\((.*?)\)', style)
+                    bg_image_url = bg_image_url.group(1) if bg_image_url else None
+        
+                    bg_position = re.search(r'background-position:\s*([-\d]+)px\s+([-\d]+)px', style)
+                    bg_position = (int(bg_position.group(1)), int(bg_position.group(2))) if bg_position else None
+        
+                    name = cols[0].find(text=True, recursive=False)
+                    name = name.strip() if name else None
+        
+                    identifier = cols[1].text.strip()
+        
+                    if bg_image_url and bg_position and name and identifier:
+                        if identifier not in processed_items:
+                            results.append({
+                                "name": name,
+                                "id": identifier,
+                                "bg_image_url": bg_image_url,
+                                "bg_position": bg_position
+                            })
+                            successful_items += 1
+                        else:
+                            print(f"Skipping already processed item: {identifier}")
+        
+            processed_items.add(data["url"])
+            return results
+        
+        async def save_item_image(item):
+            global sprite_image
+        
+            item_size = 16
+            left = -item["bg_position"][0]
+            top = -item["bg_position"][1]
+            right = left + item_size
+            bottom = top + item_size
+        
+            item_image = sprite_image.crop((left, top, right, bottom))
+        
+            image_filename = f"{OUTPUT_FOLDER}/{item['id']}.png"
+            item_image.save(image_filename)
+        
+        async def main():
+            global sprite_image, processed_items
+        
+            url = "https://minecraft.fandom.com/wiki/Item"
+            
+            if not os.path.exists(OUTPUT_FOLDER):
+                os.makedirs(OUTPUT_FOLDER)
+        
+            # Load existing metadata
+            if os.path.exists(METADATA_FILE):
+                with open(METADATA_FILE, "r") as f:
+                    existing_metadata = json.load(f)
+                    processed_items = set(item["id"] for item in existing_metadata)
+            else:
+                existing_metadata = []
+        
+            async with aiohttp.ClientSession() as session:
+                response = await fetch(session, url)
+                if not response:
+                    print("Failed to fetch main page. Exiting.")
+                    return
+        
+                soup = BeautifulSoup(response, "html.parser")
+        
+                valid_titles = [
+                    "Items that create blocks, fluids or entities",
+                    "Items with use in the world",
+                    "Items with indirect use in the world",
+                    "Spawn eggs"
+                ]
+        
+                mid_data = []
+                for h3 in soup.find_all("h3"):
+                    if h3.text not in valid_titles:
+                        continue
+        
+                    next_tag = h3.find_next_sibling()
+                    li_list = []
+                    while next_tag and next_tag.name != "h3":
+                        li_list.extend(next_tag.find_all("li"))
+                        next_tag = next_tag.find_next_sibling()
+        
+                    for li in li_list:
+                        for a in li.find_all("a", href=True):
+                            if a["href"].startswith("/wiki/"):
+                                mid_data.append({
+                                    "name": a["title"],
+                                    "url": "https://minecraft.fandom.com"+a["href"],
+                                })
+        
+                tasks = [process_item(session, data) for data in mid_data]
+                results = await asyncio.gather(*tasks)
+        
+                all_items = [item for sublist in results for item in sublist]
+        
+                # Download sprite image once
+                if all_items:
+                    sprite_content = await download_image(session, all_items[0]["bg_image_url"])
+                    if sprite_content:
+                        sprite_image = Image.open(io.BytesIO(sprite_content))
+                    else:
+                        print("Failed to download sprite image. Exiting.")
+                        return
+        
+                image_tasks = [save_item_image(item) for item in all_items]
+                await asyncio.gather(*image_tasks)
+        
+                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items]
+        
+                with open(METADATA_FILE, "w") as f:
+                    json.dump(metadata, f, indent=2)
+        
+                print(f"Processing complete. Total items: {total_items}, Successful: {successful_items}, Failed: {failed_items}")
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        EOT
+        python get_heads.py
+
+    - name: Commit and push changes
+      env:
+        PAT: ${{ secrets.PAT }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add mob_heads/
+        git commit -m "Update items data" -a || echo "No changes to commit"
+        git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
