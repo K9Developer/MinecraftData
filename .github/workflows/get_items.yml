@@ -139,10 +139,10 @@ jobs:
                                 "bg_position": bg_position
                             })
                             successful_items += 1
+                            processed_items.add(identifier.lower())
                         else:
                             print(f"Skipping already processed item: {identifier}")
         
-            processed_items.add(data["url"])
             return results
         
         async def save_item_image(item):
