@@ -136,14 +136,6 @@
     "id": "raw_iron"
   },
   {
-    "name": "Block",
-    "id": "redstone_wire"
-  },
-  {
-    "name": "Item",
-    "id": "redstone"
-  },
-  {
     "name": "Scute",
     "id": "scute"
   },
