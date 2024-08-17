@@ -199,21 +199,7 @@ jobs:
                     entity.pop("background_position", None)
                     entity.pop("img_url", None)
                 print(f"[+] Writing {entity_type} metadata to file...")
-                for entity in metadata:
-                    entity.pop("background_position", None)
-                    entity.pop("img_url", None)
-                
-                with open(f"items/metadata.json", "w+") as f:
-                    existing_metadata = []
-                    try:
-                        existing_metadata = json.load(f)
-                    except json.JSONDecodeError:
-                        pass
-                    existing_metadata.extend(metadata)
-                    f.write(json.dumps(existing_metadata))
-        
-                print(f"[+] Done writing {entity_type} metadata to file")
-                print(f"[!] Failed to scrape {failed} {entity_type}")
+                return metadata
         
         async def main():
             # 720 + 820 = 1540
@@ -221,7 +207,32 @@ jobs:
                 scrape_entities("items", "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"),
                 scrape_entities("blocks", "https://minecraft.fandom.com/wiki/Category:Blocks")
             ]
-            await asyncio.gather(*tasks)
+            all_metadata = await asyncio.gather(*tasks)
+            
+            # Merge metadata from both tasks
+            merged_metadata = []
+            for metadata_list in all_metadata:
+                merged_metadata.extend(metadata_list)
+            
+            # Read existing metadata
+            existing_metadata = []
+            try:
+                with open("items/metadata.json", "r") as f:
+                    existing_metadata = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                pass
+            
+            # Merge with existing metadata
+            merged_metadata.extend(existing_metadata)
+            
+            # Remove duplicates based on 'id'
+            unique_metadata = {item['id']: item for item in merged_metadata}.values()
+            
+            # Write merged metadata to file
+            with open("items/metadata.json", "w") as f:
+                json.dump(list(unique_metadata), f, indent=2)
+            
+            print("[+] Done writing merged metadata to file")
         
         if __name__ == "__main__":
             start_time = time.time()
