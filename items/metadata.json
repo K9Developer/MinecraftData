@@ -168,7 +168,7 @@
     "id": "string"
   },
   {
-    "name": "Wheat Crops",
+    "name": "Wheat",
     "id": "wheat"
   },
   {
@@ -478,6 +478,10 @@
   {
     "name": "Torchflower Seeds",
     "id": "torchflower_seeds"
+  },
+  {
+    "name": "Wheat Crops",
+    "id": "wheat"
   },
   {
     "name": "Wheat Seeds",
