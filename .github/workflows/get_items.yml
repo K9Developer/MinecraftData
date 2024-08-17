@@ -118,12 +118,15 @@ jobs:
         
             sub_entities = []
             rows = entity_table.find_all("tr")
+            replace_name = rows[0].find("th").text
             for row in rows[1:]:
                 cells = row.find_all("td")
                 if len(cells) < 2 or cells[0].find("span") is None:
                     continue
         
                 sub_entity_name = cells[0].text.strip()
+                if sub_entity_name == "Item" or sub_entity_name == "Block":
+                    sub_entity_name = replace_name
                 entity_identifier = cells[1].text.strip().lower()
                 if entity_identifier == "416":
                     print(f"[!] Skipping {entity_type} {sub_entity_name}")
@@ -213,18 +216,7 @@ jobs:
             merged_metadata = []
             for metadata_list in all_metadata:
                 merged_metadata.extend(metadata_list)
-            
-            # Read existing metadata
-            existing_metadata = []
-            try:
-                with open("items/metadata.json", "r") as f:
-                    existing_metadata = json.load(f)
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-            
-            # Merge with existing metadata
-            merged_metadata.extend(existing_metadata)
-            
+
             # Remove duplicates based on 'id'
             unique_metadata = {item['id']: item for item in merged_metadata}.values()
             
