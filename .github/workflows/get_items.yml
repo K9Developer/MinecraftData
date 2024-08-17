@@ -45,199 +45,150 @@ jobs:
         import json
         import time
         
-        # Global variables
-        OUTPUT_FOLDER = "items"
-        METADATA_FILE = f"{OUTPUT_FOLDER}/metadata.json"
-        sprite_image = None
-        processed_items = set()
-        processed_md_items = []
-        total_items = 0
-        successful_items = 0
-        failed_items = 0
+        async def fetch(session, url):
+            async with session.get(url) as response:
+                return await response.text()
         
-        async def fetch(session, url, retries=3):
-            for _ in range(retries):
-                try:
-                    async with session.get(url) as response:
-                        return await response.text()
-                except Exception as e:
-                    print(f"Error fetching {url}: {e}")
-                    await asyncio.sleep(5)
-            return None
+        async def fetch_image(session, url):
+            async with session.get(url) as response:
+                return await response.read()
         
-        async def download_image(session, url, retries=3):
-            for _ in range(retries):
-                try:
-                    async with session.get(url) as response:
-                        return await response.read()
-                except Exception as e:
-                    print(f"Error downloading image {url}: {e}")
-                    await asyncio.sleep(5)
-            return None
-        
-        async def process_item(session, data):
-            global total_items, successful_items, failed_items
-            total_items += 1
-        
-            if data["url"] in processed_items:
-                print(f"Skipping already processed item: {data['name']}")
-                return []
-        
-            html = await fetch(session, data["url"])
-            if not html:
-                failed_items += 1
-                return []
-        
-            soup = BeautifulSoup(html, "html.parser")
+        async def process_item(session, item_li, image_url, image_obj):
+            if item_li.find("a") is None:
+                return None, 1
             
-            tables = soup.find_all("table", class_="wikitable")
-            if not tables:
-                failed_items += 1
-                return []
-        
-            data_table = None
-            for table in tables:
-                prev_sibling = table.find_previous_sibling()
-                if prev_sibling and prev_sibling.name == 'p' and prev_sibling.text.strip() == "Java Edition:":
-                    rows = table.find_all("tr")
-                    if rows:
-                        headers = rows[0].find_all(["th", "td"])
-                        if len(headers) >= 2 and headers[0].text.strip() == "Name" and headers[1].text.strip() == "Identifier":
-                            data_table = table
-                            break
+            item_name = item_li.text
+            item_url = item_li.find("a")["href"]
+            item_url = f"https://minecraft.fandom.com{item_url}"
             
-            if not data_table:
-                failed_items += 1
-                return []
+            # Get the td element containing the item_li (parent)
+            td = item_li.find_parent("td")
+            th = td.find_previous_sibling("th")
+            name = th.text.strip().replace("\n", "")
+            if "Bedrock Edition only" in name or \
+                "Education Edition only" in name or \
+                "April Fools" in name or \
+                "Unimplemented" in name or \
+                "Legacy Console Edition only" in name or \
+                "Unused" in name or \
+                "BE & EE only" in name:
+                    print(f"[!] {item_li.text.replace("\n", "").strip()} is exclusive to another edition, skipping... ({item_url})")
+                    return None, 1
         
-            results = []
-            for index, item_row in enumerate(data_table.find_all("tr")):
-                if index == 0:
+        
+        
+            item_data = await fetch(session, item_url)
+            item_soup = BeautifulSoup(item_data, "html.parser")
+            
+            item_table = None
+            for h2 in item_soup.find_all("h2"):
+                h2text = re.sub(r'\W+', '', h2.text.strip())
+                if h2text == "Datavalues":
+                    h3 = h2.find_next("h3")
+                    h3text = re.sub(r'\W+', '', h3.text.strip())
+                    if h3text == "ID":
+                        item_table = h3.find_next("table")
+                        break
+            
+            if item_table is None:
+                print(f"[!] Couldn't find item table for {item_name}, skipping...")
+                return None, 1
+        
+            sub_items = []
+            rows = item_table.find_all("tr")
+            for row in rows[1:]:
+                if row.find("td") is None:
                     continue
         
-                cols = item_row.find_all("td")
-                img_span = cols[0].find("span")
+                cells = row.find_all("td")
+        
+                if cells[0].find("span") is None:
+                    continue
+        
+                sub_item_name = cells[0].text.strip()
+                item_identifier = cells[1].text.strip().lower()
+                if item_identifier == "416":
+                    print(f"[!] Skipping item {sub_item_name}")
+                    continue
+                item_img_url = cells[0].find("span")["style"].split("url(")[1].split(")")[0]
                 
-                if img_span:
-                    style = img_span.get("style", "")
-                    bg_image_url = re.search(r'url\((.*?)\)', style)
-                    bg_image_url = bg_image_url.group(1) if bg_image_url else None
+                sub_items.append({
+                    "name": sub_item_name,
+                    "id": item_identifier,
+                    "img_url": item_img_url,
+                    "background_position": cells[0].find("span")["style"].split("background-position:")[1].split(";")[0]
+                })
         
-                    bg_position = re.search(r'background-position:\s*([-\d]+)px\s+([-\d]+)px', style)
-                    bg_position = (int(bg_position.group(1)), int(bg_position.group(2))) if bg_position else None
+            return sub_items, 0
         
-                    name = cols[0].find(text=True, recursive=False)
-                    name = name.strip() if name else None
+        async def save_image(session, item, image_url, image_obj):
+            if os.path.exists(f"items/{item['id']}.png"):
+                print(f"[?] Item {item['id']} already exists, skipping...")
+                return
         
-                    identifier = cols[1].text.strip()
+            if image_url != item['img_url']:
+                image_content = await fetch_image(session, item['img_url'])
+                image_obj = Image.open(io.BytesIO(image_content))
+                image_url = item['img_url']
         
-                    if bg_image_url and bg_position and name and identifier:
-                        if identifier not in processed_items:
-                            results.append({
-                                "name": name,
-                                "id": identifier.lower(),
-                                "bg_image_url": bg_image_url,
-                                "bg_position": bg_position
-                            })
-                            successful_items += 1
-                            processed_items.add(identifier.lower())
-                        else:
-                            print(f"Skipping already processed item: {identifier}")
-        
-            return results
-        
-        async def save_item_image(item):
-            global sprite_image
-        
-            item_size = 16
-            left = -item["bg_position"][0]
-            top = -item["bg_position"][1]
-            right = left + item_size
-            bottom = top + item_size
-        
-            item_image = sprite_image.crop((left, top, right, bottom))
-        
-            image_filename = f"{OUTPUT_FOLDER}/{item['id']}.png"
-            item_image.save(image_filename)
+            background_position = item['background_position'].split(" ")
+            background_position = (-int(background_position[0].replace("px", "")), -int(background_position[1].replace("px", "")))
+            item_image = image_obj.crop((background_position[0], background_position[1], background_position[0] + 16, background_position[1] + 16))
+            item_image.save(f"items/{item['id']}.png")
+            print(f"[*] Saved sub item: {item['name']}")
         
         async def main():
-            global sprite_image, processed_items, processed_md_items
-        
-            url = "https://minecraft.fandom.com/wiki/Item"
+            data_url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"
             
-            if not os.path.exists(OUTPUT_FOLDER):
-                os.makedirs(OUTPUT_FOLDER)
-        
-            # Load existing metadata
-            if os.path.exists(METADATA_FILE):
-                with open(METADATA_FILE, "r") as f:
-                    existing_metadata = json.load(f)
-                    processed_items = set(item["id"] for item in existing_metadata)
-            else:
-                existing_metadata = []
-        
             async with aiohttp.ClientSession() as session:
-                response = await fetch(session, url)
-                if not response:
-                    print("Failed to fetch main page. Exiting.")
-                    return
+                data = await fetch(session, data_url)
+                data = json.loads(data)
+                data = data["parse"]["text"]["*"]
+                soup = BeautifulSoup(data, "html.parser")
+                
+                failed = 0
+                image_url = None
+                image_obj = None
+                metadata = []
         
-                soup = BeautifulSoup(response, "html.parser")
-        
-                valid_titles = [
-                    "Items that create blocks, fluids or entities",
-                    "Items with use in the world",
-                    "Items with indirect use in the world",
-                    "Spawn eggs"
-                ]
-        
-                mid_data = []
-                for h3 in soup.find_all("h3"):
-                    if h3.text not in valid_titles:
-                        continue
-        
-                    next_tag = h3.find_next_sibling()
-                    li_list = []
-                    while next_tag and next_tag.name != "h3":
-                        li_list.extend(next_tag.find_all("li"))
-                        next_tag = next_tag.find_next_sibling()
-        
-                    for li in li_list:
-                        for a in li.find_all("a", href=True):
-                            if a["href"].startswith("/wiki/"):
-                                mid_data.append({
-                                    "name": a["title"],
-                                    "url": "https://minecraft.fandom.com"+a["href"],
-                                })
-        
-                tasks = [process_item(session, data) for data in mid_data]
+                print("--- Scraping items ---")
+                tasks = [process_item(session, item_li, image_url, image_obj) for item_li in soup.find_all("li")]
                 results = await asyncio.gather(*tasks)
         
-                all_items = [item for sublist in results for item in sublist]
+                for sub_items, fail_count in results:
+                    failed += fail_count
+                    if sub_items:
+                        metadata.extend(sub_items)
         
-                # Download sprite image once
-                if all_items:
-                    sprite_content = await download_image(session, all_items[0]["bg_image_url"])
-                    if sprite_content:
-                        sprite_image = Image.open(io.BytesIO(sprite_content))
-                    else:
-                        print("Failed to download sprite image. Exiting.")
-                        return
-        
-                image_tasks = [save_item_image(item) for item in all_items]
+                image_tasks = [save_image(session, item, image_url, image_obj) for item in metadata]
                 await asyncio.gather(*image_tasks)
-
-                filtered_items = [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_md_items]
-                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_md_items]
-                processed_md_items += [item["id"] for item in filtered_items]
         
-                with open(METADATA_FILE, "w") as f:
+                print("--- Scraping items done ---")
+            
+                echo_shard_image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Echo_Shard_JE1_BE1.png"
+                echo_shard_id = "echo_shard"
+                echo_shard_name = "Echo Shard"
+                echo_shard_image_content = await fetch_image(session, echo_shard_image)
+                echo_shard_image_obj = Image.open(io.BytesIO(echo_shard_image_content))
+                echo_shard_image_obj.save(f"items/{echo_shard_id}.png")
+                metadata.append({
+                    "name": echo_shard_name,
+                    "id": echo_shard_id,
+                })
+            
+                print("[+] Writing metadata to file...")
+                for item in metadata:
+                    item.pop("background_position", None)
+                    item.pop("img_url", None)
+                with open("items/metadata.json", "w") as f:
                     json.dump(metadata, f)
+                print("[+] Done writing metadata to file")
+                print(f"[!] Failed to scrape {failed} items")
         
-                print(f"Processing complete. Total items: {total_items}, Successful: {successful_items}, Failed: {failed_items}")
-
         if __name__ == "__main__":
+            start_time = time.time()
             asyncio.run(main())
+            print(f"Total execution time: {time.time() - start_time:.2f} seconds")
         EOT
         python get_items.py
 
