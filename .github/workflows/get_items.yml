@@ -50,6 +50,7 @@ jobs:
         METADATA_FILE = f"{OUTPUT_FOLDER}/metadata.json"
         sprite_image = None
         processed_items = set()
+        processed_md_items = []
         total_items = 0
         successful_items = 0
         failed_items = 0
@@ -160,7 +161,7 @@ jobs:
             item_image.save(image_filename)
         
         async def main():
-            global sprite_image, processed_items
+            global sprite_image, processed_items, processed_md_items
         
             url = "https://minecraft.fandom.com/wiki/Item"
             
@@ -225,8 +226,10 @@ jobs:
         
                 image_tasks = [save_item_image(item) for item in all_items]
                 await asyncio.gather(*image_tasks)
-        
-                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_items]
+
+                filtered_items = [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_md_items]
+                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_md_items]
+                processed_md_items += [item["id"] for item in filtered_items]
         
                 with open(METADATA_FILE, "w") as f:
                     json.dump(metadata, f, indent=2)
