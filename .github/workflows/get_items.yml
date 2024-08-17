@@ -34,7 +34,7 @@ jobs:
 
     - name: Run items script
       run: |
-        cat << EOT > get_heads.py
+        cat << EOT > get_items.py
         import asyncio
         import aiohttp
         from bs4 import BeautifulSoup
@@ -236,7 +236,7 @@ jobs:
         if __name__ == "__main__":
             asyncio.run(main())
         EOT
-        python get_heads.py
+        python get_items.py
 
     - name: Commit and push changes
       env:
@@ -244,6 +244,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add mob_heads/
+        git add items/
         git commit -m "Update items data" -a || echo "No changes to commit"
         git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
