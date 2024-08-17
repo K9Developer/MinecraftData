@@ -226,7 +226,7 @@ jobs:
                 image_tasks = [save_item_image(item) for item in all_items]
                 await asyncio.gather(*image_tasks)
         
-                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items]
+                metadata = existing_metadata + [{"name": item["name"], "id": item["id"]} for item in all_items if item["id"] not in processed_items]
         
                 with open(METADATA_FILE, "w") as f:
                     json.dump(metadata, f, indent=2)
