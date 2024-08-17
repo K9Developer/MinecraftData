@@ -193,9 +193,9 @@ jobs:
                 item_id = item.get('id')
                 item_name = item.get('name')
                 if item_id is not None and item_name is not None:
-                    key = (item_id, item_name)
-                    if key not in seen:
-                        seen.add(key)
+                    if item_id not in seen and item_name not in seen:
+                        seen.add(item_id)
+                        seen.add(item_name)
                         result.append(item)
             return result
         
