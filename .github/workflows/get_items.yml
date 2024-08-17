@@ -44,9 +44,7 @@ jobs:
         import os
         import json
         import time
-        
-        import asyncio
-        import aiohttp
+        import math
         from aiohttp import ClientConnectorError, ServerDisconnectedError, ClientOSError
         
         image_cache = {}
@@ -65,7 +63,6 @@ jobs:
                         return None
         
         async def fetch_image(session, url, max_retries=5, delay=1):
-            # Check if the image is already in the cache
             if url in image_cache:
                 return image_cache[url]
         
@@ -73,7 +70,6 @@ jobs:
                 try:
                     async with session.get(url) as response:
                         image_data = await response.read()
-                        # Cache the image data
                         image_cache[url] = image_data
                         return image_data
                 except (ClientConnectorError, ServerDisconnectedError, ClientOSError, asyncio.TimeoutError) as e:
@@ -92,7 +88,6 @@ jobs:
             entity_li_href = entity_li.find('a')['href'].replace("\\"", "").replace("\\\\", "")
             entity_url = f"https://minecraft.fandom.com{entity_li_href}"
             
-            # Check for exclusivity
             td = entity_li.find_parent("td")
             th = td.find_previous_sibling("th")
             name = th.text.strip().replace("\n", "")
@@ -137,24 +132,29 @@ jobs:
                     "name": sub_entity_name,
                     "id": entity_identifier,
                     "img_url": entity_img_url,
-                    "background_position": cells[0].find("span")["style"].split("background-position:")[1].split(";")[0]
+                    "background_position": cells[0].find("span")["style"].split("background-position:")[1].split(";")[0],
+                    "type": entity_type
                 })
         
             return sub_entities, 0
         
-        async def save_entity_image(session, entity, folder):
-            if os.path.exists(f"items/{entity['id']}.png"):
-                print(f"[?] {folder.capitalize()} {entity['id']} already exists, skipping...")
-                return
-        
+        async def save_entity_image(session, entity, atlas_image, current_offset):
             image_content = await fetch_image(session, entity['img_url'])
             image_obj = Image.open(io.BytesIO(image_content))
         
             background_position = entity['background_position'].split(" ")
             background_position = (-int(background_position[0].replace("px", "")), -int(background_position[1].replace("px", "")))
             entity_image = image_obj.crop((background_position[0], background_position[1], background_position[0] + 16, background_position[1] + 16))
-            entity_image.save(f"items/{entity['id']}.png")
-            print(f"[*] Saved {folder} {entity['name']}")
+            
+            atlas_image.paste(entity_image, current_offset)
+            
+            return {
+                "id": entity['id'],
+                "name": entity['name'],
+                "type": entity['type'],
+                "offsetX": current_offset[0],
+                "offsetY": current_offset[1]
+            }
         
         async def scrape_entities(entity_type, data_url):
             print(f"--- Scraping {entity_type} ---")
@@ -183,42 +183,23 @@ jobs:
                     if sub_entities:
                         metadata.extend(sub_entities)
         
-                image_tasks = [save_entity_image(session, entity, entity_type) for entity in metadata]
-                await asyncio.gather(*image_tasks)
-        
                 print(f"--- Scraping {entity_type} done ---")
-            
-                echo_shard_image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Echo_Shard_JE1_BE1.png"
-                echo_shard_id = "echo_shard"
-                echo_shard_name = "Echo Shard"
-                echo_shard_image_content = await fetch_image(session, echo_shard_image)
-                echo_shard_image_obj = Image.open(io.BytesIO(echo_shard_image_content))
-                echo_shard_image_obj.save(f"items/{echo_shard_id}.png")
-                metadata.append({
-                        "name": echo_shard_name,
-                        "id": echo_shard_id,
-                    })
-                for entity in metadata:
-                    entity.pop("background_position", None)
-                    entity.pop("img_url", None)
-                print(f"[+] Writing {entity_type} metadata to file...")
                 return metadata
-
+        
         def remove_duplicates(data):
-          seen = set()
-          result = []
-          for item in data:
-              item_id = item.get('id')
-              item_name = item.get('name')
-              if item_id is not None and item_name is not None:
-                  key = (item_id, item_name)
-                  if key not in seen:
-                      seen.add(key)
-                      result.append(item)
-          return result
+            seen = set()
+            result = []
+            for item in data:
+                item_id = item.get('id')
+                item_name = item.get('name')
+                if item_id is not None and item_name is not None:
+                    key = (item_id, item_name)
+                    if key not in seen:
+                        seen.add(key)
+                        result.append(item)
+            return result
         
         async def main():
-            # 720 + 820 = 1540
             tasks = [
                 scrape_entities("items", "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"),
                 scrape_entities("blocks", "https://minecraft.fandom.com/wiki/Category:Blocks")
@@ -229,15 +210,52 @@ jobs:
             merged_metadata = []
             for metadata_list in all_metadata:
                 merged_metadata.extend(metadata_list)
-
+        
             # Remove duplicates based on 'id'
             unique_metadata = remove_duplicates(merged_metadata)
             
-            # Write merged metadata to file
-            with open("items/metadata.json", "w") as f:
-                json.dump(unique_metadata, f, indent=2)
+            # Create a single atlas for both items and blocks
+            atlas_size = math.ceil(math.sqrt(len(unique_metadata))) * 16
+            atlas_image = Image.new('RGBA', (atlas_size, atlas_size), (0, 0, 0, 0))
             
-            print("[+] Done writing merged metadata to file")
+            atlas_metadata = []
+            current_offset = [0, 0]
+            
+            async with aiohttp.ClientSession() as session:
+                for entity in unique_metadata:
+                    entity_metadata = await save_entity_image(session, entity, atlas_image, tuple(current_offset))
+                    atlas_metadata.append(entity_metadata)
+                    
+                    current_offset[0] += 16
+                    if current_offset[0] >= atlas_size:
+                        current_offset[0] = 0
+                        current_offset[1] += 16
+        
+                # Add Echo Shard to the atlas
+                echo_shard_image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Echo_Shard_JE1_BE1.png"
+                echo_shard_id = "echo_shard"
+                echo_shard_name = "Echo Shard"
+                echo_shard_image_content = await fetch_image(session, echo_shard_image)
+                echo_shard_image_obj = Image.open(io.BytesIO(echo_shard_image_content))
+                echo_shard_image_obj = echo_shard_image_obj.resize((16, 16), Image.LANCZOS)
+                atlas_image.paste(echo_shard_image_obj, tuple(current_offset))
+                atlas_metadata.append({
+                    "id": echo_shard_id,
+                    "name": echo_shard_name,
+                    "type": "items",
+                    "offsetX": current_offset[0],
+                    "offsetY": current_offset[1]
+                })
+                
+        
+            atlas_image.save("items/atlas.png")
+            print("[+] Saved atlas")
+        
+            # Write merged metadata to file
+            with open("items/atlas_metadata.json", "w") as f:
+                json.dump(atlas_metadata, f, indent=2)
+            
+            print("[+] Done writing atlas metadata to file")
         
         if __name__ == "__main__":
             start_time = time.time()
