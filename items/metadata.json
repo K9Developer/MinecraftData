@@ -136,6 +136,14 @@
     "id": "raw_iron"
   },
   {
+    "name": "Redstone Dust",
+    "id": "redstone_wire"
+  },
+  {
+    "name": "Redstone Dust",
+    "id": "redstone"
+  },
+  {
     "name": "Scute",
     "id": "scute"
   },
@@ -1052,7 +1060,7 @@
     "id": "spyglass"
   },
   {
-    "name": "Item",
+    "name": "Armor Stand",
     "id": "armor_stand"
   },
   {
@@ -2064,7 +2072,7 @@
     "id": "packed_ice"
   },
   {
-    "name": "Block",
+    "name": "Lava",
     "id": "lava"
   },
   {
@@ -2080,7 +2088,7 @@
     "id": "snow_block"
   },
   {
-    "name": "Block",
+    "name": "Water",
     "id": "water"
   },
   {
@@ -5556,11 +5564,11 @@
     "id": "structure_void"
   },
   {
-    "name": "Block",
+    "name": "Name",
     "id": "chalkboard"
   },
   {
-    "name": "Item",
+    "name": "Name",
     "id": "board"
   },
   {
