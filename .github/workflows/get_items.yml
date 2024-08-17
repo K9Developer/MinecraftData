@@ -232,7 +232,7 @@ jobs:
                 processed_md_items += [item["id"] for item in filtered_items]
         
                 with open(METADATA_FILE, "w") as f:
-                    json.dump(metadata, f, indent=2)
+                    json.dump(metadata, f)
         
                 print(f"Processing complete. Total items: {total_items}, Successful: {successful_items}, Failed: {failed_items}")
 
