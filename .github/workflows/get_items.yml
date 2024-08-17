@@ -203,6 +203,19 @@ jobs:
                     entity.pop("img_url", None)
                 print(f"[+] Writing {entity_type} metadata to file...")
                 return metadata
+
+        def remove_duplicates(data):
+          seen = set()
+          result = []
+          for item in data:
+              item_id = item.get('id')
+              item_name = item.get('name')
+              if item_id is not None and item_name is not None:
+                  key = (item_id, item_name)
+                  if key not in seen:
+                      seen.add(key)
+                      result.append(item)
+          return result
         
         async def main():
             # 720 + 820 = 1540
@@ -218,11 +231,11 @@ jobs:
                 merged_metadata.extend(metadata_list)
 
             # Remove duplicates based on 'id'
-            unique_metadata = {item['id']: item for item in merged_metadata}.values()
+            unique_metadata = remove_duplicates(merged_metadata)
             
             # Write merged metadata to file
             with open("items/metadata.json", "w") as f:
-                json.dump(list(unique_metadata), f, indent=2)
+                json.dump(unique_metadata, f, indent=2)
             
             print("[+] Done writing merged metadata to file")
         
