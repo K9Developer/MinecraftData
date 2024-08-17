@@ -45,125 +45,145 @@ jobs:
         import json
         import time
         
-        async def fetch(session, url):
-            async with session.get(url) as response:
-                return await response.text()
+        import asyncio
+        import aiohttp
+        from aiohttp import ClientConnectorError, ServerDisconnectedError, ClientOSError
         
-        async def fetch_image(session, url):
-            async with session.get(url) as response:
-                return await response.read()
+        image_cache = {}
         
-        async def process_item(session, item_li, image_url, image_obj):
-            if item_li.find("a") is None:
+        async def fetch(session, url, max_retries=5, delay=1):
+            for attempt in range(max_retries):
+                try:
+                    async with session.get(url) as response:
+                        return await response.text()
+                except (ClientConnectorError, ServerDisconnectedError, ClientOSError, asyncio.TimeoutError) as e:
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(delay)
+                        delay *= 2
+                    else:
+                        print(f"Failed to fetch {url} after {max_retries} attempts: {e}")
+                        return None
+        
+        async def fetch_image(session, url, max_retries=5, delay=1):
+            # Check if the image is already in the cache
+            if url in image_cache:
+                return image_cache[url]
+        
+            for attempt in range(max_retries):
+                try:
+                    async with session.get(url) as response:
+                        image_data = await response.read()
+                        # Cache the image data
+                        image_cache[url] = image_data
+                        return image_data
+                except (ClientConnectorError, ServerDisconnectedError, ClientOSError, asyncio.TimeoutError) as e:
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(delay)
+                        delay *= 2
+                    else:
+                        print(f"Failed to fetch image {url} after {max_retries} attempts: {e}")
+                        return None
+        
+        async def process_entity(session, entity_li, entity_type):
+            if entity_li.find("a") is None:
                 return None, 1
             
-            item_name = item_li.text
-            item_url = item_li.find("a")["href"]
-            item_url = f"https://minecraft.fandom.com{item_url}"
+            entity_name = entity_li.text
+            entity_li_href = entity_li.find('a')['href'].replace("\"", "").replace("\\", "")
+            entity_url = f"https://minecraft.fandom.com{entity_li_href}"
             
-            # Get the td element containing the item_li (parent)
-            td = item_li.find_parent("td")
+            # Check for exclusivity
+            td = entity_li.find_parent("td")
             th = td.find_previous_sibling("th")
             name = th.text.strip().replace("\n", "")
-            if "Bedrock Edition only" in name or \
-                "Education Edition only" in name or \
-                "April Fools" in name or \
-                "Unimplemented" in name or \
-                "Legacy Console Edition only" in name or \
-                "Unused" in name or \
-                "BE & EE only" in name:
-                    print(f"[!] {item_li.text.replace("\n", "").strip()} is exclusive to another edition, skipping... ({item_url})")
-                    return None, 1
-        
-        
-        
-            item_data = await fetch(session, item_url)
-            item_soup = BeautifulSoup(item_data, "html.parser")
-            
-            item_table = None
-            for h2 in item_soup.find_all("h2"):
-                h2text = re.sub(r'\W+', '', h2.text.strip())
-                if h2text == "Datavalues":
-                    h3 = h2.find_next("h3")
-                    h3text = re.sub(r'\W+', '', h3.text.strip())
-                    if h3text == "ID":
-                        item_table = h3.find_next("table")
-                        break
-            
-            if item_table is None:
-                print(f"[!] Couldn't find item table for {item_name}, skipping...")
+            exclusive_editions = ["Bedrock Edition only", "Education Edition only", "April Fools", "Unimplemented", "Legacy Console Edition only", "Unused", "BE & EE only", "BE & edu only", "Non-physical", "Removed"]
+            if any(edition in name for edition in exclusive_editions):
+                print(f"[!] {entity_name.replace('\n', '').strip()} is blacklisted, skipping... ({entity_url})")
                 return None, 1
         
-            sub_items = []
-            rows = item_table.find_all("tr")
+            entity_data = await fetch(session, entity_url)
+            entity_soup = BeautifulSoup(entity_data, "html.parser")
+            
+            entity_table = None
+            for h2 in entity_soup.find_all("h2"):
+                if re.sub(r'\W+', '', h2.text.strip()) == "Datavalues":
+                    h3 = h2.find_next("h3")
+                    if re.sub(r'\W+', '', h3.text.strip()) == "ID":
+                        entity_table = h3.find_next("table")
+                        break
+            
+            if entity_table is None:
+                print(f"[!] Couldn't find {entity_type} table for {entity_name}, skipping...")
+                return None, 1
+        
+            sub_entities = []
+            rows = entity_table.find_all("tr")
             for row in rows[1:]:
-                if row.find("td") is None:
-                    continue
-        
                 cells = row.find_all("td")
-        
-                if cells[0].find("span") is None:
+                if len(cells) < 2 or cells[0].find("span") is None:
                     continue
         
-                sub_item_name = cells[0].text.strip()
-                item_identifier = cells[1].text.strip().lower()
-                if item_identifier == "416":
-                    print(f"[!] Skipping item {sub_item_name}")
+                sub_entity_name = cells[0].text.strip()
+                entity_identifier = cells[1].text.strip().lower()
+                if entity_identifier == "416":
+                    print(f"[!] Skipping {entity_type} {sub_entity_name}")
                     continue
-                item_img_url = cells[0].find("span")["style"].split("url(")[1].split(")")[0]
+                entity_img_url = cells[0].find("span")["style"].split("url(")[1].split(")")[0]
                 
-                sub_items.append({
-                    "name": sub_item_name,
-                    "id": item_identifier,
-                    "img_url": item_img_url,
+                sub_entities.append({
+                    "name": sub_entity_name,
+                    "id": entity_identifier,
+                    "img_url": entity_img_url,
                     "background_position": cells[0].find("span")["style"].split("background-position:")[1].split(";")[0]
                 })
         
-            return sub_items, 0
+            return sub_entities, 0
         
-        async def save_image(session, item, image_url, image_obj):
-            if os.path.exists(f"items/{item['id']}.png"):
-                print(f"[?] Item {item['id']} already exists, skipping...")
+        async def save_entity_image(session, entity, folder):
+            if os.path.exists(f"items/{entity['id']}.png"):
+                print(f"[?] {folder.capitalize()} {entity['id']} already exists, skipping...")
                 return
         
-            if image_url != item['img_url']:
-                image_content = await fetch_image(session, item['img_url'])
-                image_obj = Image.open(io.BytesIO(image_content))
-                image_url = item['img_url']
+            image_content = await fetch_image(session, entity['img_url'])
+            image_obj = Image.open(io.BytesIO(image_content))
         
-            background_position = item['background_position'].split(" ")
+            background_position = entity['background_position'].split(" ")
             background_position = (-int(background_position[0].replace("px", "")), -int(background_position[1].replace("px", "")))
-            item_image = image_obj.crop((background_position[0], background_position[1], background_position[0] + 16, background_position[1] + 16))
-            item_image.save(f"items/{item['id']}.png")
-            print(f"[*] Saved sub item: {item['name']}")
+            entity_image = image_obj.crop((background_position[0], background_position[1], background_position[0] + 16, background_position[1] + 16))
+            entity_image.save(f"items/{entity['id']}.png")
+            print(f"[*] Saved {folder} {entity['name']}")
         
-        async def main():
-            data_url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"
-            
+        async def scrape_entities(entity_type, data_url):
+            print(f"--- Scraping {entity_type} ---")
             async with aiohttp.ClientSession() as session:
                 data = await fetch(session, data_url)
-                data = json.loads(data)
-                data = data["parse"]["text"]["*"]
                 soup = BeautifulSoup(data, "html.parser")
                 
                 failed = 0
-                image_url = None
-                image_obj = None
                 metadata = []
         
-                print("--- Scraping items ---")
-                tasks = [process_item(session, item_li, image_url, image_obj) for item_li in soup.find_all("li")]
+                if entity_type == "items":
+                    elements = soup.find_all("li")
+                else:  # blocks
+                    allowed_tables = ["Natural", "Biota", "Building", "Utility", "Creative only", "Commands only"]
+                    elements = [li for table in soup.find_all("table") 
+                                if table.find("span", {"class": "navbox-title"}) and table.find("span", {"class": "navbox-title"}).text in allowed_tables
+                                for tr in table.find_all("tr")[1:] 
+                                for td in tr.find_all("td") 
+                                for li in td.find_all("li")]
+        
+                tasks = [process_entity(session, element, entity_type) for element in elements]
                 results = await asyncio.gather(*tasks)
         
-                for sub_items, fail_count in results:
+                for sub_entities, fail_count in results:
                     failed += fail_count
-                    if sub_items:
-                        metadata.extend(sub_items)
+                    if sub_entities:
+                        metadata.extend(sub_entities)
         
-                image_tasks = [save_image(session, item, image_url, image_obj) for item in metadata]
+                image_tasks = [save_entity_image(session, entity, entity_type) for entity in metadata]
                 await asyncio.gather(*image_tasks)
         
-                print("--- Scraping items done ---")
+                print(f"--- Scraping {entity_type} done ---")
             
                 echo_shard_image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Echo_Shard_JE1_BE1.png"
                 echo_shard_id = "echo_shard"
@@ -172,18 +192,36 @@ jobs:
                 echo_shard_image_obj = Image.open(io.BytesIO(echo_shard_image_content))
                 echo_shard_image_obj.save(f"items/{echo_shard_id}.png")
                 metadata.append({
-                    "name": echo_shard_name,
-                    "id": echo_shard_id,
-                })
-            
-                print("[+] Writing metadata to file...")
-                for item in metadata:
-                    item.pop("background_position", None)
-                    item.pop("img_url", None)
-                with open("items/metadata.json", "w") as f:
-                    json.dump(metadata, f)
-                print("[+] Done writing metadata to file")
-                print(f"[!] Failed to scrape {failed} items")
+                        "name": echo_shard_name,
+                        "id": echo_shard_id,
+                    })
+                for entity in metadata:
+                    entity.pop("background_position", None)
+                    entity.pop("img_url", None)
+                print(f"[+] Writing {entity_type} metadata to file...")
+                for entity in metadata:
+                    entity.pop("background_position", None)
+                    entity.pop("img_url", None)
+                
+                with open(f"items/metadata.json", "w+") as f:
+                    existing_metadata = []
+                    try:
+                        existing_metadata = json.load(f)
+                    except json.JSONDecodeError:
+                        pass
+                    existing_metadata.extend(metadata)
+                    f.write(json.dumps(existing_metadata))
+        
+                print(f"[+] Done writing {entity_type} metadata to file")
+                print(f"[!] Failed to scrape {failed} {entity_type}")
+        
+        async def main():
+            # 720 + 820 = 1540
+            tasks = [
+                scrape_entities("items", "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"),
+                scrape_entities("blocks", "https://minecraft.fandom.com/wiki/Category:Blocks")
+            ]
+            await asyncio.gather(*tasks)
         
         if __name__ == "__main__":
             start_time = time.time()
