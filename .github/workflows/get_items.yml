@@ -89,7 +89,7 @@ jobs:
                 return None, 1
             
             entity_name = entity_li.text
-            entity_li_href = entity_li.find('a')['href'].replace("\"", "").replace("\\", "")
+            entity_li_href = entity_li.find('a')['href'].replace("\\"", "").replace("\\\\", "")
             entity_url = f"https://minecraft.fandom.com{entity_li_href}"
             
             # Check for exclusivity
