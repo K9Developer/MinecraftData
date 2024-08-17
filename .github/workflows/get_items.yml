@@ -134,7 +134,7 @@ jobs:
                         if identifier not in processed_items:
                             results.append({
                                 "name": name,
-                                "id": identifier,
+                                "id": identifier.lower(),
                                 "bg_image_url": bg_image_url,
                                 "bg_position": bg_position
                             })
