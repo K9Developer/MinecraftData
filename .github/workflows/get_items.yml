@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  get_heads:
+  get_items:
     runs-on: ubuntu-latest
 
     steps:
