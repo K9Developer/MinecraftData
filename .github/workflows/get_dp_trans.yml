@@ -31,30 +31,29 @@ jobs:
 
     - name: Run items script
       run: |
-        cat << EOT > get_items.py
-            import requests
-            import zipfile
-            import io
-            import json
-        
-            versions_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
-            versions = requests.get(versions_url).json()
-            latest_version = versions["versions"][0]
-            version_url = latest_version["url"]
-            version = requests.get(version_url).json()
-            client_url = version["downloads"]["client"]["url"]
-            client = requests.get(client_url).content
-            jar = zipfile.ZipFile(io.BytesIO(client))
-            file_path = "assets/minecraft/lang/en_us.json"
-            en_us_json = jar.read(file_path)
-            en_us_json = json.loads(en_us_json)
-            dataPack_keys = {key:value for key, value in en_us_json.items() if key.startswith("dataPack.")}
-            with open("datapack_translations/en_us.json", "w") as f:
-                f.write( json.dumps(dataPack_keys) )
-
+        cat << EOT > get_trans.py
+        import requests
+        import zipfile
+        import io
+        import json
+    
+        versions_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+        versions = requests.get(versions_url).json()
+        latest_version = versions["versions"][0]
+        version_url = latest_version["url"]
+        version = requests.get(version_url).json()
+        client_url = version["downloads"]["client"]["url"]
+        client = requests.get(client_url).content
+        jar = zipfile.ZipFile(io.BytesIO(client))
+        file_path = "assets/minecraft/lang/en_us.json"
+        en_us_json = jar.read(file_path)
+        en_us_json = json.loads(en_us_json)
+        dataPack_keys = {key:value for key, value in en_us_json.items() if key.startswith("dataPack.")}
+        with open("datapack_translations/en_us.json", "w") as f:
+            f.write( json.dumps(dataPack_keys) )
 
         EOT
-        python get_items.py
+        python get_trans.py
 
     - name: Commit and push changes
       env:
