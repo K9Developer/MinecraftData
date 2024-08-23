@@ -1,0 +1,392 @@
+name: Get Recipes
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  get_items:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Create recipes directory
+      run: mkdir -p recipes
+
+    - name: Run recipes script
+      run: |
+        cat << EOT > get_rec.py
+        import requests
+        import zipfile
+        import io
+        import json
+        
+        base_block_groups = ['#minecraft:coals', '#minecraft:soul_fire_base_blocks', '#minecraft:logs', '#minecraft:acacia_logs', '#minecraft:spruce_logs', '#minecraft:smelts_to_glass', '#minecraft:mangrove_logs', '#minecraft:jungle_logs', '#minecraft:crimson_stems', '#minecraft:cherry_logs', '#minecraft:dark_oak_logs', '#minecraft:birch_logs', '#minecraft:oak_logs', '#minecraft:logs_that_burn', '#minecraft:warped_stems']
+        
+        def format_recipe_key(key):
+            if "tag" in key:
+                return "#"+key["tag"]
+            elif "item" in key:
+                return key["item"]
+            else:
+                return key
+        
+        def format_recipe_keys(keys):
+            new_keys = {}
+            for key, value in keys.items():
+              if type(value) is list: value = value[0] # Important: Sometimes it allows multiple items in the same key, currently we dont handle that
+              new_key = format_recipe_key(value)
+              new_keys[key] = new_key
+            return new_keys
+        
+        def _get_blocks_to_craft_pattern(recipe):
+            keys = recipe["key"]
+            format_keys = format_recipe_keys(keys)
+            blocks_to_craft = {}
+            for elem in "".join(recipe["pattern"]):
+                if format_keys.get(elem) is None:
+                    continue
+                if format_keys[elem] in blocks_to_craft:
+                    blocks_to_craft[format_keys[elem]] += 1
+                else:
+                    blocks_to_craft[format_keys[elem]] = 1
+        
+            return blocks_to_craft
+        
+        def _get_blocks_to_craft_ingredients(recipe, key="ingredients"):
+            blocks_to_craft = {}
+            for ingredient in recipe[key]:
+                if "tag" in ingredient:
+                    tag = ingredient["tag"]
+                    formatted_tag = format_recipe_key(tag)
+                    if formatted_tag in blocks_to_craft:
+                        blocks_to_craft[formatted_tag] += 1
+                    else:
+                        blocks_to_craft[formatted_tag] = 1
+                elif type(ingredient) is dict and "item" in ingredient:
+                    item = ingredient["item"]
+                    formatted_item = format_recipe_key(item)
+                    if formatted_item in blocks_to_craft:
+                        blocks_to_craft[formatted_item] += 1
+                    else:
+                        blocks_to_craft[formatted_item] = 1
+                else:
+                    if type(ingredient) is list: ingredient = ingredient[0] # Important: Sometimes it allows multiple items in the same ingredient, currently we dont handle that
+                    if ingredient in blocks_to_craft:
+                        blocks_to_craft[ingredient] += 1
+                    else:
+                        blocks_to_craft[ingredient] = 1
+            return blocks_to_craft
+        
+        def _get_blocks_to_craft_ingredient(recipe):
+            ingredient = recipe["ingredient"]
+            if "tag" in ingredient:
+                return {format_recipe_key(ingredient["tag"]): 1}
+            elif "item" in ingredient:
+                return {format_recipe_key(ingredient["item"]): 1}
+            else:
+                return {ingredient: 1}
+        
+        def get_blocks_to_craft(recipe):
+            if "pattern" in recipe:
+                return [_get_blocks_to_craft_pattern(recipe)]
+            elif "ingredients" in recipe:
+                return [_get_blocks_to_craft_ingredients(recipe)]
+            elif "ingredient" in recipe and type(recipe["ingredient"]) is list:
+                return [{key:val} for key, val in _get_blocks_to_craft_ingredients(recipe, "ingredient").items()]
+            elif "ingredient" in recipe:
+                return [_get_blocks_to_craft_ingredient(recipe)]
+            else:
+                return None
+        
+        def get_latest_version_jar():
+            versions_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+            versions = requests.get(versions_url).json()
+            latest_version = versions["versions"][0]
+            version_url = latest_version["url"]
+            version = requests.get(version_url).json()
+            client_url = version["downloads"]["client"]["url"]
+            client = requests.get(client_url).content
+            jar = zipfile.ZipFile(io.BytesIO(client))
+            return jar
+        
+        def get_version_tags(jar):
+            folder = r"data/minecraft/tags/item"
+            tags = {}
+            for file in jar.namelist():
+                if file.startswith(folder) and file.endswith(".json"):
+                    with jar.open(file) as f:
+                        tag = json.load(f)
+                        tag_name = file.split("/")[-1].split(".")[0]
+                        tags[tag_name] = tag["values"]
+            return tags
+        
+        # TODO: Also look at type
+        jar = get_latest_version_jar()
+        tags = get_version_tags(jar)
+        data = {
+            "tags": tags,
+            "data": {}
+        }
+        folder = "data/minecraft/recipe"
+        recipes = []
+        for file in jar.namelist():
+            if file.startswith(folder) and file.endswith(".json"):
+                with jar.open(file) as f:
+                    recipe = json.load(f)
+                    blocks_to_craft = get_blocks_to_craft(recipe)
+                    if blocks_to_craft is None:
+                        continue
+        
+                    for rec in blocks_to_craft:            
+                        recipe_data = {}
+                        recipe_data["result"] = recipe["result"]
+                        recipe_data["blocks_to_craft"] = rec
+                        recipe_data["type"] = recipe["type"]
+                        if recipe["result"]["id"] not in data["data"]:  
+                            data["data"][recipe["result"]["id"]] = [recipe_data]
+                        else:
+                            data["data"][recipe["result"]["id"]].append(recipe_data)
+        
+        with open("data.json", "w") as f:
+            json.dump(data, f, indent=4)
+        
+        def expand_tag_items(tags, items):
+            expanded_items = []
+            for item in items:
+                if item.startswith("#"):
+                    expanded_items.extend(expand_tag_items(tags, tags[item[1:].removeprefix("minecraft:")]))
+                else:
+                    expanded_items.append(item)
+            return expanded_items
+        
+        
+        def used_items_to_craft(data, item):
+            if item not in data:
+                return [None, None]
+            return [recipe["blocks_to_craft"] for recipe in data[item]], [recipe["type"] for recipe in data[item]]
+        
+        def is_complicated_item(item):
+            blocks_to_craft, _ = used_items_to_craft(data["data"], item)
+            if blocks_to_craft is None:
+                return False
+            for recipe in blocks_to_craft:
+                if len(recipe) > 1:
+                    return True
+            return False
+        
+        def get_output_quantity(data, item):
+            if item in data["data"]:
+                recipes = data["data"][item]
+                if recipes and isinstance(recipes[0], dict):
+                    return recipes[0]["result"].get("count", 1)
+            return 1  # Default to 1 if not found
+        
+        def get_crafting_action(craft_type):
+            if craft_type in ['blasting', 'smelting']:
+                return 'smelt'
+            elif craft_type.startswith('crafting_'):
+                return 'craft'
+            else:
+                return 'obtain'
+        
+        def get_paths(item, data, path_so_far=None, target_item=None):
+            if path_so_far is None:
+                path_so_far = set()
+            if target_item is None:
+                target_item = item
+        
+            #print(f"DEBUG: Getting paths for {item}")
+            expanded_items = expand_tag_items(data["tags"], [item])
+            #print(f"DEBUG: Expanded items: {expanded_items}")
+            result = {}
+        
+            for expanded_item in expanded_items:
+                if expanded_item in path_so_far:
+                    #print(f"DEBUG: Loop detected for {expanded_item}, treating as base item")
+                    result[expanded_item] = [[{"action": "obtain", "to_get": expanded_item, "amount": 1}]]
+                    continue
+        
+                if expanded_item == target_item and expanded_item != item:
+                    #print(f"DEBUG: Found target item {target_item} in path, skipping")
+                    continue
+        
+                #print(f"DEBUG: Processing expanded item: {expanded_item}")
+                recipes_and_types = used_items_to_craft(data["data"], expanded_item)
+                #print(f"DEBUG: Recipes and types for {expanded_item}: {recipes_and_types}")
+        
+                if not recipes_and_types[0]:
+                    #print(f"DEBUG: No recipe found for {expanded_item}, treating as base item")
+                    result[expanded_item] = [[{"action": "obtain", "to_get": expanded_item, "amount": 1}]]
+                    continue
+        
+                new_path_so_far = path_so_far.union({expanded_item})
+        
+                if is_complicated_item(expanded_item):
+                    #print(f"DEBUG: {expanded_item} is complicated, using only its direct recipes")
+                    paths = []
+                    for recipe, craft_type in zip(recipes_and_types[0], recipes_and_types[1]):
+                        path = []
+                        for key, value in recipe.items():
+                            path.append({"action": "obtain", "to_get": key, "amount": value})
+                        path.append({"action": get_crafting_action(craft_type.replace('minecraft:', '')), "to_get": expanded_item, "amount": 1})
+                        paths.append(path)
+                    result[expanded_item] = paths
+        
+                else:
+                    paths = []
+                    for recipe, craft_type in zip(recipes_and_types[0], recipes_and_types[1]):
+                        #print(f"DEBUG: Processing recipe: {recipe}, craft_type: {craft_type}")
+                        recipe_paths = [[]]
+                        output_quantity = get_output_quantity(data, expanded_item)
+                        #print(f"DEBUG: Output quantity for {expanded_item}: {output_quantity}")
+                        for ingredient, amount in recipe.items():
+                            #print(f"DEBUG: Processing ingredient: {ingredient}, amount: {amount}")
+                            ingredient_expanded = expand_tag_items(data["tags"], [ingredient])
+                            ingredient_paths = []
+                            for exp_ingredient in ingredient_expanded:
+                                if exp_ingredient == target_item or exp_ingredient in new_path_so_far:
+                                    #print(f"DEBUG: Found {exp_ingredient} in path or as target item, skipping")
+                                    continue
+                                sub_paths = get_paths(exp_ingredient, data, new_path_so_far, target_item)
+                                if sub_paths:
+                                    for sub_path in sub_paths[exp_ingredient]:
+                                        new_path = []
+                                        for sub_item in sub_path:
+                                            new_amount = sub_item["amount"] * amount / output_quantity
+                                            new_path.append({"action": sub_item["action"], "to_get": sub_item["to_get"], "amount": new_amount})
+                                        ingredient_paths.append(new_path)
+                                else:
+                                    ingredient_paths.append([{"action": "obtain", "to_get": exp_ingredient, "amount": amount / output_quantity}])
+                            
+                            #print(f"DEBUG: Ingredient paths for {ingredient}: {ingredient_paths}")
+                            
+                            new_recipe_paths = []
+                            for rp in recipe_paths:
+                                for ip in ingredient_paths:
+                                    new_recipe_paths.append(rp + ip)
+                            recipe_paths = new_recipe_paths
+        
+                        for path in recipe_paths:
+                            path.append({"action": get_crafting_action(craft_type.replace('minecraft:', '')), "to_get": expanded_item, "amount": 1})
+                        paths.extend(recipe_paths)
+        
+                    #print(f"DEBUG: All paths for {expanded_item} before uniqueness check: {paths}")
+        
+                    # Remove duplicate paths and keep the shortest one for each base item
+                    unique_paths = {}
+                    for path in paths:
+                        if len(path) > 1:  # Only consider paths with more than one step
+                            base_item = path[0]["to_get"]
+                            if base_item not in unique_paths or len(path) < len(unique_paths[base_item]):
+                                # Check if any item appears more than once in the path
+                                items_in_path = set()
+                                duplicate_found = False
+                                for step in path:
+                                    if step["to_get"] in items_in_path:
+                                        duplicate_found = True
+                                        break
+                                    items_in_path.add(step["to_get"])
+                                
+                                if not duplicate_found:
+                                    unique_paths[base_item] = path
+        
+                    result[expanded_item] = list(unique_paths.values())
+        
+            return result
+        
+        def get_list_of_dependencies(item, items):
+            raw_deps = {}
+            for path in items[item]:
+                for step in path:
+                    if step["to_get"] not in raw_deps:
+                        raw_deps[step["to_get"]] = 0
+                    raw_deps[step["to_get"]] += 1
+            deps = []
+            for dep, count in raw_deps.items():
+                if count == len(items[item]):
+                    deps.append(dep)
+            return deps
+        
+        
+        def filter_paths(items):
+            filtered_items = {}
+            for item_id, item_paths in items.items():
+                filtered_paths = []
+                for path in item_paths:
+                    found_deps = set()
+                    bad_path = False
+                    for step in path:
+                        for item in expand_tag_items(data["tags"], [step["to_get"]]):
+                            if item in found_deps:
+                                print(f"DEBUG: Found {item} in found_deps, cancelling path")
+                                bad_path = True
+                                break
+        
+                            deps = get_list_of_dependencies(item, items)
+                            found_deps.update(deps)
+                            print(f"DEBUG: Found dependencies for {item}: {deps}")
+                    if not bad_path:
+                        filtered_paths.append(path)
+                filtered_items[item_id] = filtered_paths
+            return filtered_items
+                            
+        
+        pattern_items = set()
+        result_items = set()
+        
+        for result_id in data["data"]:
+            item_recipes, _ = used_items_to_craft(data["data"], result_id)
+            for recipe in item_recipes:
+                for key in recipe:
+                    expanded_values = expand_tag_items(data["tags"], [key])
+                    pattern_items.update(expanded_values)
+            result_items.add(result_id)
+        
+        non_craftables = list(pattern_items - result_items)
+        expand_non_craftable_items = expand_tag_items(data["tags"], non_craftables)
+        
+        top_level_items = list(result_items - pattern_items)
+        expand_top_level_items = expand_tag_items(data["tags"], top_level_items)
+        
+        full_data = {}
+        items = expand_tag_items(data["tags"], list(pattern_items))
+        items.extend(expand_top_level_items)
+        for item in items:
+            item_data = get_paths(item, data)
+            full_data.update(item_data)
+        
+        full_data = filter_paths(full_data)
+        
+        with open("recipes/recipe_data.json", "w") as f:
+            f.write(json.dumps(full_data).replace(" ", ""))
+
+
+        EOT
+        python get_rec.py
+
+    - name: Commit and push changes
+      env:
+        PAT: ${{ secrets.PAT }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add recipes/
+        git commit -m "Update recipe data" -a || echo "No changes to commit"
+        git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
