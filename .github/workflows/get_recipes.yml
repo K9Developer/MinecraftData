@@ -328,6 +328,10 @@ jobs:
         def filter_paths(items):
             filtered_items = {}
             for item_id, item_paths in items.items():
+                # Check if there's only 1 path with 1 step and it's to get the item_id
+                if len(item_paths) == 1 and len(item_paths[0]) == 1 and item_paths[0][0]["to_get"] == item_id:
+                    continue  # Skip this item entirely
+        
                 filtered_paths = []
                 for path in item_paths:
                     found_deps = set()
@@ -342,9 +346,16 @@ jobs:
                             deps = get_list_of_dependencies(item, items)
                             found_deps.update(deps)
                             print(f"DEBUG: Found dependencies for {item}: {deps}")
+                        
+                        if bad_path:
+                            break
+                    
                     if not bad_path:
                         filtered_paths.append(path)
-                filtered_items[item_id] = filtered_paths
+                
+                if filtered_paths:  # Only add the item if it has any remaining paths
+                    filtered_items[item_id] = filtered_paths
+            
             return filtered_items
                             
         
