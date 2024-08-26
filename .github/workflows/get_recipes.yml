@@ -183,6 +183,7 @@ jobs:
             return [recipe["blocks_to_craft"] for recipe in data[item]], [recipe["type"] for recipe in data[item]]
         
         def is_complicated_item(item):
+            return True # simplify frontend algo
             blocks_to_craft, _ = used_items_to_craft(data["data"], item)
             if blocks_to_craft is None:
                 return False
