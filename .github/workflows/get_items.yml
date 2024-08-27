@@ -25,7 +25,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install requests
-        pip install aiohttp
         pip install beautifulsoup4
         pip install Pillow
 
@@ -35,232 +34,177 @@ jobs:
     - name: Run items script
       run: |
         cat << EOT > get_items.py
-        import asyncio
-        import aiohttp
-        from bs4 import BeautifulSoup
-        import re
-        from PIL import Image
-        import io
-        import os
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from io import BytesIO
         import json
-        import time
+        from math import sqrt
         import math
-        from aiohttp import ClientConnectorError, ServerDisconnectedError, ClientOSError
+        import time
+        import requests
+        from bs4 import BeautifulSoup
+        from PIL import Image
         
-        image_cache = {}
+        img_cache = {}
         
-        async def fetch(session, url, max_retries=5, delay=1):
-            for attempt in range(max_retries):
-                try:
-                    async with session.get(url) as response:
-                        return await response.text()
-                except (ClientConnectorError, ServerDisconnectedError, ClientOSError, asyncio.TimeoutError) as e:
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(delay)
-                        delay *= 2
-                    else:
-                        print(f"Failed to fetch {url} after {max_retries} attempts: {e}")
-                        return None
-        
-        async def fetch_image(session, url, max_retries=5, delay=1):
-            if url in image_cache:
-                return image_cache[url]
-        
-            for attempt in range(max_retries):
-                try:
-                    async with session.get(url) as response:
-                        image_data = await response.read()
-                        image_cache[url] = image_data
-                        return image_data
-                except (ClientConnectorError, ServerDisconnectedError, ClientOSError, asyncio.TimeoutError) as e:
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(delay)
-                        delay *= 2
-                    else:
-                        print(f"Failed to fetch image {url} after {max_retries} attempts: {e}")
-                        return None
-        
-        async def process_entity(session, entity_li, entity_type):
-            if entity_li.find("a") is None:
-                return None, 1
-            
-            entity_name = entity_li.text
-            entity_li_href = entity_li.find('a')['href'].replace("\\"", "").replace("\\\\", "")
-            entity_url = f"https://minecraft.fandom.com{entity_li_href}"
-            
-            td = entity_li.find_parent("td")
-            th = td.find_previous_sibling("th")
-            name = th.text.strip().replace("\n", "")
-            exclusive_editions = ["Bedrock Edition only", "Education Edition only", "April Fools", "Unimplemented", "Legacy Console Edition only", "Unused", "BE & EE only", "BE & edu only", "Non-physical", "Removed"]
-            if any(edition in name for edition in exclusive_editions):
-                print(f"[!] {entity_name.replace('\n', '').strip()} is blacklisted, skipping... ({entity_url})")
-                return None, 1
-        
-            entity_data = await fetch(session, entity_url)
-            entity_soup = BeautifulSoup(entity_data, "html.parser")
-            
-            entity_table = None
-            for h2 in entity_soup.find_all("h2"):
-                if re.sub(r'\W+', '', h2.text.strip()) == "Datavalues":
-                    h3 = h2.find_next("h3")
-                    if re.sub(r'\W+', '', h3.text.strip()) == "ID":
-                        entity_table = h3.find_next("table")
-                        break
-            
-            if entity_table is None:
-                print(f"[!] Couldn't find {entity_type} table for {entity_name}, skipping...")
-                return None, 1
-        
-            sub_entities = []
-            rows = entity_table.find_all("tr")
-            replace_name = rows[0].find("th").text
-            for row in rows[1:]:
-                cells = row.find_all("td")
-                if len(cells) < 2 or cells[0].find("span") is None:
-                    continue
-        
-                sub_entity_name = cells[0].text.strip()
-                if sub_entity_name == "Item" or sub_entity_name == "Block":
-                    sub_entity_name = replace_name
-                entity_identifier = cells[1].text.strip().lower()
-                if entity_identifier == "416":
-                    print(f"[!] Skipping {entity_type} {sub_entity_name}")
-                    continue
-                entity_img_url = cells[0].find("span")["style"].split("url(")[1].split(")")[0]
-                
-                sub_entities.append({
-                    "name": sub_entity_name,
-                    "id": entity_identifier,
-                    "img_url": entity_img_url,
-                    "background_position": cells[0].find("span")["style"].split("background-position:")[1].split(";")[0],
-                    "type": entity_type
-                })
-        
-            return sub_entities, 0
-        
-        async def save_entity_image(session, entity, atlas_image, current_offset):
-            image_content = await fetch_image(session, entity['img_url'])
-            image_obj = Image.open(io.BytesIO(image_content))
-        
-            background_position = entity['background_position'].split(" ")
-            background_position = (-int(background_position[0].replace("px", "")), -int(background_position[1].replace("px", "")))
-            entity_image = image_obj.crop((background_position[0], background_position[1], background_position[0] + 16, background_position[1] + 16))
-            
-            atlas_image.paste(entity_image, current_offset)
-            
+        def get_data(row):
+            tds = row.find_all("td")
+            image_url = tds[0].find("img")
+            if image_url.get("data-src") is not None:
+                image_url = image_url["data-src"]
+            else:
+                image_url = image_url["src"]
+            mc_id = tds[1].text
+            name = tds[2].text.strip().replace("\\n", "")
             return {
-                "id": entity['id'],
-                "name": entity['name'],
-                "type": entity['type'],
-                "offsetX": current_offset[0],
-                "offsetY": current_offset[1]
+                "image_url": image_url,
+                "mc_id": mc_id,
+                "name": name
             }
         
-        async def scrape_entities(entity_type, data_url):
-            print(f"--- Scraping {entity_type} ---")
-            async with aiohttp.ClientSession() as session:
-                data = await fetch(session, data_url)
-                soup = BeautifulSoup(data, "html.parser")
+        
+        def get_blocks():
+            print("Getting blocks")
+            url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Java_Edition_data_values&text=%7B%7B%3AJava%20Edition%20data%20values%2FBlocks%7D%7D"
+            response = requests.get(url)
+            data = response.json()
+            html = data["parse"]["text"]["*"]
+            soup = BeautifulSoup(html, "html.parser")
+            print("Got soup")
+            table = soup.find("table", attrs={"data-description": "Block IDs"})
+            blocks = []
+            for row in table.find_all("tr")[1:]:
+                block_data = get_data(row)
+                block_data["type"] = "block"
+                blocks.append(block_data)
+                print(f"Got block {block_data['name']}")
+            return blocks
+        
+        def get_items():
+            print("Getting items")
+            url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Java_Edition_data_values&text=%7B%7B%3AJava%20Edition%20data%20values%2FItems%7D%7D"
+            response = requests.get(url)
+            data = response.json()
+            html = data["parse"]["text"]["*"]
+            soup = BeautifulSoup(html, "html.parser")
+            print("Got soup")
+            table = soup.find("table", attrs={"data-description": "Item IDs"})
+            items = []
+            for row in table.find_all("tr")[1:]:
+                item_data = {}
+                td1 = row.find_all("td")[0]
+                item_data["name"] = td1.text.strip()
+                td2 = row.find_all("td")[1]
+                item_data["mc_id"] = td2.text.strip()
+                style_data = td1.find("span")["style"]
+                start = style_data.find("url(") + len("url(")
+                end = style_data.find(")")
+                item_data["image_url"] = style_data[start:end]
+                item_data["positions"] = {
+                    "x": 0,
+                    "y": 0
+                }
+                start = style_data.find("background-position:") + len("background-position:")
+                end = style_data.find("px")    
+                item_data["positions"]["x"] = int(style_data[start:end])
+                start = end + len("px")
+                end = style_data.find("px", start)
+                item_data["positions"]["y"] = int(style_data[start:end])
+                item_data["type"] = "item"
+                items.append(item_data)
+                print(f"Got item {item_data['name']}")
+        
+            return items
+        
+        def get_image_PIL(item):
+            if item.get("positions") is None:
+                if item["image_url"] not in img_cache:
+                    res = requests.get(item["image_url"])
+                    im = Image.open(BytesIO(res.content))
+                    im.thumbnail((32, 32))
+                    img_cache[item["image_url"]] = im
+                return img_cache[item["image_url"]]
+            else:
+                if item["image_url"] not in img_cache:
+                    res = requests.get(item["image_url"])
+                    im = Image.open(BytesIO(res.content))
+                    img_cache[item["image_url"]] = im
                 
-                failed = 0
-                metadata = []
-        
-                if entity_type == "items":
-                    elements = soup.find_all("li")
-                else:  # blocks
-                    allowed_tables = ["Natural", "Biota", "Building", "Utility", "Creative only", "Commands only"]
-                    elements = [li for table in soup.find_all("table") 
-                                if table.find("span", {"class": "navbox-title"}) and table.find("span", {"class": "navbox-title"}).text in allowed_tables
-                                for tr in table.find_all("tr")[1:] 
-                                for td in tr.find_all("td") 
-                                for li in td.find_all("li")]
-        
-                tasks = [process_entity(session, element, entity_type) for element in elements]
-                results = await asyncio.gather(*tasks)
-        
-                for sub_entities, fail_count in results:
-                    failed += fail_count
-                    if sub_entities:
-                        metadata.extend(sub_entities)
-        
-                print(f"--- Scraping {entity_type} done ---")
-                return metadata
-        
-        def remove_duplicates(data):
-            seen = set()
-            result = []
-            for item in data:
-                item_id = item.get('id')
-                item_name = item.get('name')
-                if item_id is not None and item_name is not None:
-                    if item_id not in seen and item_name not in seen:
-                        seen.add(item_id)
-                        seen.add(item_name)
-                        result.append(item)
-            return result
-        
-        async def main():
-            tasks = [
-                scrape_entities("items", "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Category%3AItems&text=%7B%7B%3ATemplate%3AItems%2Fcontent%7D%7D"),
-                scrape_entities("blocks", "https://minecraft.fandom.com/wiki/Category:Blocks")
-            ]
-            all_metadata = await asyncio.gather(*tasks)
-            
-            # Merge metadata from both tasks
-            merged_metadata = []
-            for metadata_list in all_metadata:
-                merged_metadata.extend(metadata_list)
-        
-            # Remove duplicates based on 'id'
-            unique_metadata = remove_duplicates(merged_metadata)
-            
-            # Create a single atlas for both items and blocks
-            atlas_size = math.ceil(math.sqrt(len(unique_metadata))) * 16
-            atlas_image = Image.new('RGBA', (atlas_size, atlas_size), (0, 0, 0, 0))
-            
-            atlas_metadata = []
-            current_offset = [0, 0]
-            
-            async with aiohttp.ClientSession() as session:
-                for entity in unique_metadata:
-                    entity_metadata = await save_entity_image(session, entity, atlas_image, tuple(current_offset))
-                    atlas_metadata.append(entity_metadata)
-                    
-                    current_offset[0] += 16
-                    if current_offset[0] >= atlas_size:
-                        current_offset[0] = 0
-                        current_offset[1] += 16
-        
-                # Add Echo Shard to the atlas
-                echo_shard_image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Echo_Shard_JE1_BE1.png"
-                echo_shard_id = "echo_shard"
-                echo_shard_name = "Echo Shard"
-                echo_shard_image_content = await fetch_image(session, echo_shard_image)
-                echo_shard_image_obj = Image.open(io.BytesIO(echo_shard_image_content))
-                echo_shard_image_obj = echo_shard_image_obj.resize((16, 16), Image.LANCZOS)
-                atlas_image.paste(echo_shard_image_obj, tuple(current_offset))
-                atlas_metadata.append({
-                    "id": echo_shard_id,
-                    "name": echo_shard_name,
-                    "type": "items",
-                    "offsetX": current_offset[0],
-                    "offsetY": current_offset[1]
-                })
+                pil_img = img_cache[item["image_url"]].copy()
+                x = -item["positions"]["x"]
+                y = -item["positions"]["y"]
+                width = height = 16
+                pil_img = pil_img.crop((x, y, x + width, y + height)).resize((32, 32))
                 
+                return pil_img
         
-            atlas_image.save("items/atlas.png")
-            print("[+] Saved atlas")
+        def process_block(item, i, width):
+            pil_image = get_image_PIL(item)
+            x = (i % (width // 32)) * 32
+            y = (i // (width // 32)) * 32
+            print(f"Processed block {item['name']}")
+            return {
+                "image": pil_image,
+                "position": (x, y),
+                "data": {
+                    "name": item["name"],
+                    "id": item.get("mc_id", ""),
+                    "type": item["type"],
+                    "offsetX": x,
+                    "offsetY": y
+                }
+            }
         
-            # Write merged metadata to file
+        def process_item(item, i, width):
+            pil_image = get_image_PIL(item)
+            x = (i % (width // 32)) * 32
+            y = (i // (width // 32)) * 32
+            print(f"Processed item {item['name']}")
+            return {
+                "image": pil_image,
+                "position": (x, y),
+                "data": {
+                    "name": item["name"],
+                    "id": item.get("mc_id", ""),
+                    "type": item["type"],
+                    "offsetX": x,
+                    "offsetY": y
+                }
+            }
+        
+        def generate_data(block_data, item_data):
+            full_data = block_data + item_data
+            cells = len(full_data)
+            width = int(sqrt(cells)) * 32
+            height = math.ceil(cells / (width // 32)) * 32
+            atlas = Image.new("RGBA", (width, height))
+            processed_data = []
+        
+            # Process blocks using multithreading
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                block_futures = [executor.submit(process_block, item, i, width) for i, item in enumerate(block_data)]
+                
+                for future in as_completed(block_futures):
+                    result = future.result()
+                    atlas.paste(result["image"], result["position"])
+                    processed_data.append(result["data"])
+        
+            # Process items single-threaded
+            for i, item in enumerate(item_data, start=len(block_data)):
+                result = process_item(item, i, width)
+                atlas.paste(result["image"], result["position"])
+                processed_data.append(result["data"])
+        
+            atlas.save("items/atlas.png")
             with open("items/atlas_metadata.json", "w") as f:
-                json.dump(atlas_metadata, f, indent=2)
-            
-            print("[+] Done writing atlas metadata to file")
+                json.dump(processed_data, f, indent=4)
         
-        if __name__ == "__main__":
-            start_time = time.time()
-            asyncio.run(main())
-            print(f"Total execution time: {time.time() - start_time:.2f} seconds")
+        start = time.time()
+        block_data = get_blocks()
+        item_data = get_items()
+        print(f"Got {len(block_data)} blocks and {len(item_data)} items, generating data")
+        print(f"Time taken: {time.time() - start}s")
+        generate_data(block_data, item_data)
+        print(f"Total time taken: {time.time() - start}s")
         EOT
         python get_items.py
 
