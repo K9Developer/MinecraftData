@@ -27,7 +27,7 @@ jobs:
         pip install requests
 
     - name: Create recipes directory
-      run: mkdir -p recipes
+      run: mkdir -p recipe_trees
 
     - name: Run recipes script
       run: |
@@ -400,6 +400,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add recipes/
+        git add recipe_trees/
         git commit -m "Update recipe data" -a || echo "No changes to commit"
         git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
