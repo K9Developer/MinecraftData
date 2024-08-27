@@ -1,0 +1,1 @@
+{"name": "minecraft:cookie", "amount": 1, "type": null, "paths": [[{"name": "minecraft:wheat", "amount": 3.0, "type": "minecraft:crafting_shaped", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}, {"name": "minecraft:cocoa_beans", "amount": 0.125, "type": "minecraft:crafting_shaped", "paths": []}]], "base_item_paths": [{"path_data": [], "item_data": {}}]}

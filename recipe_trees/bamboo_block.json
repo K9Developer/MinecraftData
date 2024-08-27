@@ -1,0 +1,1 @@
+{"name": "minecraft:bamboo_block", "amount": 2.0, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:bamboo", "amount": 18.0, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:bamboo": 18.0}}]}

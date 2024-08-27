@@ -1,0 +1,1 @@
+{"name": "minecraft:prismarine_bricks", "amount": 1.5, "type": "minecraft:crafting_shaped", "paths": [[{"name": "minecraft:prismarine_shard", "amount": 13.5, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:prismarine_shard": 13.5}}]}

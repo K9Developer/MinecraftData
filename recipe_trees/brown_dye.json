@@ -1,0 +1,1 @@
+{"name": "minecraft:brown_dye", "amount": 3.0, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:cocoa_beans", "amount": 3.0, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:cocoa_beans": 3.0}}]}

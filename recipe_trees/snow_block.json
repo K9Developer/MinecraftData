@@ -1,0 +1,1 @@
+{"name": "minecraft:snow_block", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": [[{"name": "minecraft:snowball", "amount": 2.0, "type": "minecraft:crafting_shaped", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:snowball": 2.0}}]}

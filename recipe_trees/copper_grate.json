@@ -1,0 +1,1 @@
+{"name": "minecraft:copper_grate", "amount": 1.0, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:copper_block", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:copper_block": 0.5}}]}

@@ -1,0 +1,1 @@
+{"name": "minecraft:warped_hyphae", "amount": 1.0, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:warped_stem", "amount": 1.3333333333333333, "type": "minecraft:crafting_shaped", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:warped_stem": 1.3333333333333333}}]}

@@ -1,0 +1,1 @@
+{"name": "minecraft:bone_meal", "amount": 0.0625, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:bone", "amount": 0.020833333333333332, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:bone": 0.020833333333333332}}]}

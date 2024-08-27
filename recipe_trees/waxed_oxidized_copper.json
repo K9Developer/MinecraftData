@@ -1,0 +1,1 @@
+{"name": "minecraft:waxed_oxidized_copper", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": [[{"name": "minecraft:oxidized_copper", "amount": 0.5, "type": "minecraft:crafting_shapeless", "paths": []}, {"name": "minecraft:honeycomb", "amount": 0.5, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [], "item_data": {}}]}

@@ -1,0 +1,1 @@
+{"name": "minecraft:weathered_cut_copper", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": [[{"name": "minecraft:weathered_copper", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:weathered_copper": 0.5}}]}

@@ -1,0 +1,1 @@
+{"name": "minecraft:packed_ice", "amount": 9.0, "type": "minecraft:crafting_shapeless", "paths": [[{"name": "minecraft:ice", "amount": 81.0, "type": "minecraft:crafting_shapeless", "paths": []}]], "base_item_paths": [{"path_data": [[0, 0]], "item_data": {"minecraft:ice": 81.0}}]}
