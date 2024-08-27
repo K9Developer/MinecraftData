@@ -32,12 +32,13 @@ jobs:
     - name: Run recipes script
       run: |
         cat << EOT > get_rec.py
+        import os
         import requests
         import zipfile
         import io
         import json
         
-        base_block_groups = ['#minecraft:coals', '#minecraft:soul_fire_base_blocks', '#minecraft:logs', '#minecraft:acacia_logs', '#minecraft:spruce_logs', '#minecraft:smelts_to_glass', '#minecraft:mangrove_logs', '#minecraft:jungle_logs', '#minecraft:crimson_stems', '#minecraft:cherry_logs', '#minecraft:dark_oak_logs', '#minecraft:birch_logs', '#minecraft:oak_logs', '#minecraft:logs_that_burn', '#minecraft:warped_stems']
+        tree_node_cache = {}
         
         def format_recipe_key(key):
             if "tag" in key:
@@ -137,13 +138,9 @@ jobs:
                         tags[tag_name] = tag["values"]
             return tags
         
-        # TODO: Also look at type
         jar = get_latest_version_jar()
         tags = get_version_tags(jar)
-        data = {
-            "tags": tags,
-            "data": {}
-        }
+        data = {}
         folder = "data/minecraft/recipe"
         recipes = []
         for file in jar.namelist():
@@ -159,11 +156,29 @@ jobs:
                         recipe_data["result"] = recipe["result"]
                         recipe_data["blocks_to_craft"] = rec
                         recipe_data["type"] = recipe["type"]
-                        if recipe["result"]["id"] not in data["data"]:  
-                            data["data"][recipe["result"]["id"]] = [recipe_data]
+                        if recipe["result"]["id"] not in data:  
+                            data[recipe["result"]["id"]] = [recipe_data]
                         else:
-                            data["data"][recipe["result"]["id"]].append(recipe_data)
+                            data[recipe["result"]["id"]].append(recipe_data)
         
+        def fix_data(data):
+            new_data = {}
+            for item, recipes in data.items():
+                new_recipes = []
+                for recipe in recipes:
+                    new_recipe = recipe.copy()
+                    new_recipe["blocks_to_craft"] = {}
+                    if recipe["result"].get("count") is None:
+                        recipe["result"]["count"] = 1
+                    target_amount = recipe["result"]["count"]
+                    for block, amount in recipe["blocks_to_craft"].items():
+                        new_recipe["blocks_to_craft"][block] = amount / target_amount
+                    new_recipe["result"]["count"] = 1
+                    new_recipes.append(new_recipe)
+                new_data[item] = new_recipes
+            return new_data
+        
+        data = fix_data(data)
         with open("data.json", "w") as f:
             json.dump(data, f, indent=4)
         
@@ -176,221 +191,207 @@ jobs:
                     expanded_items.append(item)
             return expanded_items
         
+        def get_items_needed(items):
+            data = [
+                [], []
+            ]
+            for item, amount in items.items():
+                data[0].append(item)
+                data[1].append(amount)
+            return data
         
-        def used_items_to_craft(data, item):
-            if item not in data:
-                return [None, None]
-            return [recipe["blocks_to_craft"] for recipe in data[item]], [recipe["type"] for recipe in data[item]]
-        
-        def is_complicated_item(item):
-            return True # simplify frontend algo
-            blocks_to_craft, _ = used_items_to_craft(data["data"], item)
-            if blocks_to_craft is None:
-                return False
-            for recipe in blocks_to_craft:
-                if len(recipe) > 1:
-                    return True
-            return False
-        
-        def get_output_quantity(data, item):
-            if item in data["data"]:
-                recipes = data["data"][item]
-                if recipes and isinstance(recipes[0], dict):
-                    return recipes[0]["result"].get("count", 1)
-            return 1  # Default to 1 if not found
-        
-        def get_crafting_action(craft_type):
-            if craft_type in ['blasting', 'smelting']:
-                return 'smelt'
-            elif craft_type.startswith('crafting_'):
-                return 'craft'
-            else:
-                return 'obtain'
-        
-        def get_paths(item, data, path_so_far=None, target_item=None):
-            if path_so_far is None:
-                path_so_far = set()
-            if target_item is None:
-                target_item = item
-        
-            #print(f"DEBUG: Getting paths for {item}")
-            expanded_items = expand_tag_items(data["tags"], [item])
-            #print(f"DEBUG: Expanded items: {expanded_items}")
-            result = {}
-        
-            for expanded_item in expanded_items:
-                if expanded_item in path_so_far:
-                    #print(f"DEBUG: Loop detected for {expanded_item}, treating as base item")
-                    result[expanded_item] = [[{"action": "obtain", "to_get": expanded_item, "amount": 1}]]
-                    continue
-        
-                if expanded_item == target_item and expanded_item != item:
-                    #print(f"DEBUG: Found target item {target_item} in path, skipping")
-                    continue
-        
-                #print(f"DEBUG: Processing expanded item: {expanded_item}")
-                recipes_and_types = used_items_to_craft(data["data"], expanded_item)
-                #print(f"DEBUG: Recipes and types for {expanded_item}: {recipes_and_types}")
-        
-                if not recipes_and_types[0]:
-                    #print(f"DEBUG: No recipe found for {expanded_item}, treating as base item")
-                    result[expanded_item] = [[{"action": "obtain", "to_get": expanded_item, "amount": 1}]]
-                    continue
-        
-                new_path_so_far = path_so_far.union({expanded_item})
-        
-                if is_complicated_item(expanded_item):
-                    #print(f"DEBUG: {expanded_item} is complicated, using only its direct recipes")
-                    paths = []
-                    for recipe, craft_type in zip(recipes_and_types[0], recipes_and_types[1]):
-                        path = []
-                        for key, value in recipe.items():
-                            path.append({"action": "obtain", "to_get": key, "amount": value})
-                        path.append({"action": get_crafting_action(craft_type.replace('minecraft:', '')), "to_get": expanded_item, "amount": 1})
-                        paths.append(path)
-                    result[expanded_item] = paths
-        
-                else:
-                    paths = []
-                    for recipe, craft_type in zip(recipes_and_types[0], recipes_and_types[1]):
-                        #print(f"DEBUG: Processing recipe: {recipe}, craft_type: {craft_type}")
-                        recipe_paths = [[]]
-                        output_quantity = get_output_quantity(data, expanded_item)
-                        #print(f"DEBUG: Output quantity for {expanded_item}: {output_quantity}")
-                        for ingredient, amount in recipe.items():
-                            #print(f"DEBUG: Processing ingredient: {ingredient}, amount: {amount}")
-                            ingredient_expanded = expand_tag_items(data["tags"], [ingredient])
-                            ingredient_paths = []
-                            for exp_ingredient in ingredient_expanded:
-                                if exp_ingredient == target_item or exp_ingredient in new_path_so_far:
-                                    #print(f"DEBUG: Found {exp_ingredient} in path or as target item, skipping")
-                                    continue
-                                sub_paths = get_paths(exp_ingredient, data, new_path_so_far, target_item)
-                                if sub_paths:
-                                    for sub_path in sub_paths[exp_ingredient]:
-                                        new_path = []
-                                        for sub_item in sub_path:
-                                            new_amount = sub_item["amount"] * amount / output_quantity
-                                            new_path.append({"action": sub_item["action"], "to_get": sub_item["to_get"], "amount": new_amount})
-                                        ingredient_paths.append(new_path)
-                                else:
-                                    ingredient_paths.append([{"action": "obtain", "to_get": exp_ingredient, "amount": amount / output_quantity}])
-                            
-                            #print(f"DEBUG: Ingredient paths for {ingredient}: {ingredient_paths}")
-                            
-                            new_recipe_paths = []
-                            for rp in recipe_paths:
-                                for ip in ingredient_paths:
-                                    new_recipe_paths.append(rp + ip)
-                            recipe_paths = new_recipe_paths
-        
-                        for path in recipe_paths:
-                            path.append({"action": get_crafting_action(craft_type.replace('minecraft:', '')), "to_get": expanded_item, "amount": 1})
-                        paths.extend(recipe_paths)
-        
-                    #print(f"DEBUG: All paths for {expanded_item} before uniqueness check: {paths}")
-        
-                    # Remove duplicate paths and keep the shortest one for each base item
-                    unique_paths = {}
-                    for path in paths:
-                        if len(path) > 1:  # Only consider paths with more than one step
-                            base_item = path[0]["to_get"]
-                            if base_item not in unique_paths or len(path) < len(unique_paths[base_item]):
-                                # Check if any item appears more than once in the path
-                                items_in_path = set()
-                                duplicate_found = False
-                                for step in path:
-                                    if step["to_get"] in items_in_path:
-                                        duplicate_found = True
-                                        break
-                                    items_in_path.add(step["to_get"])
-                                
-                                if not duplicate_found:
-                                    unique_paths[base_item] = path
-        
-                    result[expanded_item] = list(unique_paths.values())
-        
-            return result
-        
-        def get_list_of_dependencies(item, items):
-            raw_deps = {}
-            for path in items[item]:
-                for step in path:
-                    if step["to_get"] not in raw_deps:
-                        raw_deps[step["to_get"]] = 0
-                    raw_deps[step["to_get"]] += 1
-            deps = []
-            for dep, count in raw_deps.items():
-                if count == len(items[item]):
-                    deps.append(dep)
-            return deps
-        
-        
-        def filter_paths(items):
-            filtered_items = {}
-            for item_id, item_paths in items.items():
-                # Check if there's only 1 path with 1 step and it's to get the item_id
-                if len(item_paths) == 1 and len(item_paths[0]) == 1 and item_paths[0][0]["to_get"] == item_id:
-                    continue  # Skip this item entirely
-        
-                filtered_paths = []
-                for path in item_paths:
-                    found_deps = set()
-                    bad_path = False
-                    for step in path:
-                        for item in expand_tag_items(data["tags"], [step["to_get"]]):
-                            if item in found_deps:
-                                print(f"DEBUG: Found {item} in found_deps, cancelling path")
-                                bad_path = True
-                                break
-        
-                            deps = get_list_of_dependencies(item, items)
-                            found_deps.update(deps)
-                            print(f"DEBUG: Found dependencies for {item}: {deps}")
-                        
-                        if bad_path:
-                            break
-                    
-                    if not bad_path:
-                        filtered_paths.append(path)
-                
-                if filtered_paths:  # Only add the item if it has any remaining paths
-                    filtered_items[item_id] = filtered_paths
+        def premu_expanded(expanded, prefix=[]):
+            if len(expanded) == 0:
+                return [prefix]
             
-            return filtered_items
-                            
+            prefixes = []
+            for item in expanded[0]:
+                prefixes.extend(premu_expanded(expanded[1:], prefix + [item]))
+            return prefixes
+            
+        def expand_items(items):
+            expanded = []
+            for item in items[0]:
+                expanded.append(expand_tag_items(tags, [item]))
+            options = premu_expanded(expanded)
+            return options
         
-        pattern_items = set()
-        result_items = set()
+        def are_intersecting(a, b):
+            return len(set(a) & set(b)) > 0
         
-        for result_id in data["data"]:
-            item_recipes, _ = used_items_to_craft(data["data"], result_id)
-            for recipe in item_recipes:
-                for key in recipe:
-                    expanded_values = expand_tag_items(data["tags"], [key])
-                    pattern_items.update(expanded_values)
-            result_items.add(result_id)
+        def generate_tree_node(item, amount, prev_item_buffer=[], item_type=None):
+            if item in prev_item_buffer:
+                return None
         
-        non_craftables = list(pattern_items - result_items)
-        expand_non_craftable_items = expand_tag_items(data["tags"], non_craftables)
+            if item in tree_node_cache:
+                return tree_node_cache[item]
         
-        top_level_items = list(result_items - pattern_items)
-        expand_top_level_items = expand_tag_items(data["tags"], top_level_items)
+            tree_node = {
+                "name": item,
+                "amount": amount,
+                "type": item_type,
+                "paths": []
+            }
         
-        full_data = {}
-        items = expand_tag_items(data["tags"], list(pattern_items))
-        items.extend(expand_top_level_items)
-        for item in items:
-            item_data = get_paths(item, data)
-            full_data.update(item_data)
+            path_ind = 0
+            for option in data[item]:
+                if not tree_node:
+                    break
+                items_needed = get_items_needed(option["blocks_to_craft"])
+                expanded_items = expand_items(items_needed)
+                for path in expanded_items:
+                    if not tree_node:
+                        break
+                    if len(tree_node["paths"])-1 < path_ind:
+                        tree_node["paths"].append([])
+                    for ind, path_item in enumerate(path):
+                        if not tree_node:
+                            break
+                        already_in = False
+                        for path2 in tree_node["paths"]:
+                            for path_item2 in path2:
+                                if path_item2["name"] == path_item:
+                                    already_in = True
+                                    break
+                            if already_in:
+                                break
+                        if already_in:
+                            continue
         
-        full_data = filter_paths(full_data)
+                        bad_item = False
+                        for future_option in data[path_item] if data.get(path_item) is not None else []:
+                            future_items_needed = get_items_needed(future_option["blocks_to_craft"])
+                            if are_intersecting(future_items_needed[0], prev_item_buffer) or item in future_items_needed[0]:
+                                bad_item = True
+                        
+                        if bad_item:
+                            continue
         
-        with open("recipes/recipe_data.json", "w") as f:
-            f.write(json.dumps(full_data).replace(" ", ""))
-
+                        if path_item not in data:
+                            # Check if path_item is not already in the other paths
+        
+                            tree_node["paths"][path_ind].append({
+                                "name": path_item,
+                                "amount": items_needed[1][ind] * amount,
+                                "type": option["type"],
+                                "paths": []
+                            })
+                        else:
+                            prev_item_buffer.append(item)
+                            node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), option["type"])
+                            if node is not None:
+                                tree_node["paths"][path_ind].append(node)
+                            else:
+                                tree_node = None
+                    path_ind += 1
+        
+            if tree_node is not None:
+                tree_node_cache[item] = tree_node
+                # remove empty paths
+                tree_node["paths"] = [path for path in tree_node["paths"] if len(path) > 0]
+        
+            return tree_node
+        
+        
+        def get_group_titles(tree, titles):
+            for path in tree["paths"]:
+                if len(path) == 1:
+                    titles.add(tree["name"])
+                else:
+                    for i in path:
+                        get_group_titles(i, titles)
+        
+        def get_item_data(tree, titles, under_parent=None, current_path=[]):
+            base_items = {k: [] for k in titles}
+        
+            if len(tree["paths"]) == 0:
+                if under_parent:
+                    base_items[under_parent].append({
+                        "item_data": {tree["name"]: tree["amount"]},
+                        "path_data": current_path
+                    })
+        
+            for pind, path in enumerate(tree["paths"]):
+                found_parent = tree["name"] in titles
+                for iind, i in enumerate(path):
+                    data = get_item_data(i, titles, tree["name"] if found_parent and not under_parent else under_parent, current_path + [pind, iind])
+                    for k, v in data.items():
+                        base_items[k].extend(v)
+            return base_items
+             
+        def merge_base_items(base_items):
+            # Prepare the data for premu_expanded, filtering out empty categories
+            category_options = [options for options in base_items.values() if options]
+            
+            # If all categories are empty, return a single empty result
+            if not category_options:
+                return [{"path_data": [], "item_data": {}}]
+            
+            # Generate all combinations using premu_expanded
+            all_combinations = premu_expanded(category_options)
+            
+            # Merge the combinations
+            merged_results = []
+            for combination in all_combinations:
+                merged_item = {
+                    "path_data": [],
+                    "item_data": {}
+                }
+                for option in combination:
+                    for item_name, item_amount in option["item_data"].items():
+                        if item_name not in merged_item["item_data"]:
+                            merged_item["item_data"][item_name] = 0
+                        merged_item["item_data"][item_name] += item_amount
+                        merged_item["path_data"].append(option["path_data"])
+                
+                merged_results.append(merged_item)
+            
+            return merged_results
+        
+        def get_item_tree(item):
+            tree = generate_tree_node(item, 1)
+            if tree is None:
+                return None
+            get_group_titles(tree, titles := set())
+            base_items = get_item_data(tree, titles)
+            base_items = merge_base_items(base_items)
+            tree["base_item_paths"] = base_items
+            return tree
+        
+        all_items = set()
+        for item in data:
+            expanded_items = expand_tag_items(tags, [item])
+            for expanded_item in expanded_items:
+                all_items.add(expanded_item)
+            for recipe in data[item]:
+                for block in recipe["blocks_to_craft"]:
+                    expanded_items = expand_tag_items(tags, [block])
+                    for expanded_item in expanded_items:
+                        all_items.add(expanded_item)
+        
+        while len(all_items):
+            item = all_items.pop()
+            if item not in data:
+                with open(f"recipe_trees/{item.removeprefix('minecraft:')}.json", "w") as f:
+                    json.dump({
+                        "name": item,
+                        "amount": 1,
+                        "parent": None,
+                        "type": "obtain"
+                    }, f)
+                continue
+            print(f" [+] Generating tree for {item}")
+            tree = get_item_tree(item)
+            if tree is None:
+                continue
+            with open(f"recipe_trees/{item.removeprefix('minecraft:')}.json", "w") as f:
+                json.dump(tree, f)
 
         EOT
+        python get_rec.py
+        python get_rec.py
+        python get_rec.py
+        python get_rec.py
         python get_rec.py
 
     - name: Commit and push changes
