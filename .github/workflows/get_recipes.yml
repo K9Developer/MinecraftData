@@ -310,6 +310,9 @@ jobs:
         
         
         def get_group_titles(tree, titles):
+            if len(tree["paths"]) == 0:
+                titles.add(tree["name"])
+                return
             for path in tree["paths"]:
                 if len(path) == 1:
                     titles.add(tree["name"])
@@ -319,13 +322,12 @@ jobs:
         
         def get_item_data(tree, titles, under_parent=None, current_path=[]):
             base_items = {k: [] for k in titles}
-        
             if len(tree["paths"]) == 0:
-                if under_parent:
-                    base_items[under_parent].append({
-                        "item_data": {tree["name"]: tree["amount"]},
-                        "path_data": current_path
-                    })
+                p = under_parent if under_parent is not None else tree["name"]
+                base_items[p].append({
+                    "item_data": {tree["name"]: tree["amount"]},
+                    "path_data": current_path
+                })
         
             for pind, path in enumerate(tree["paths"]):
                 found_parent = tree["name"] in titles
@@ -369,6 +371,7 @@ jobs:
             if tree is None:
                 return None
             get_group_titles(tree, titles := set())
+            print(titles)
             base_items = get_item_data(tree, titles)
             base_items = merge_base_items(base_items)
             tree["base_item_paths"] = base_items
