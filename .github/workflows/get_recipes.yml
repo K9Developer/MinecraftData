@@ -409,7 +409,7 @@ jobs:
             if tree is None:
                 print(f" [!] Failed to generate tree for {item}")
                 continue
-            with open(f"recipe_trees/{item.removeprefix('minecraft:')}.json", "w") as f:
+            with open(f"recipe_trees/{item.removeprefix('minecraft:')}item.json", "w") as f:
                 json.dump(tree, f)
 
         EOT
