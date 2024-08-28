@@ -396,7 +396,7 @@ jobs:
         
         for item in all_items.copy():
             if item not in data:
-                with open(f"recipe_trees/{item.removeprefix('minecraft:')}.json", "w") as f:
+                with open(f"recipe_trees/{item.removeprefix('minecraft:')}item.json", "w") as f:
                     json.dump({
                         "name": item,
                         "amount": 1,
