@@ -281,6 +281,13 @@ jobs:
                                 bad_item = True
                         
                         if bad_item:
+                            if item_type is None:
+                                tree_node["paths"][path_ind].append({
+                                    "name": path_item,
+                                    "amount": items_needed[1][ind] * amount,
+                                    "type": get_action(option["type"]),
+                                    "paths": []
+                                })
                             continue
         
                         if path_item not in data:
@@ -371,7 +378,6 @@ jobs:
             if tree is None:
                 return None
             get_group_titles(tree, titles := set())
-            print(titles)
             base_items = get_item_data(tree, titles)
             base_items = merge_base_items(base_items)
             tree["base_item_paths"] = base_items
