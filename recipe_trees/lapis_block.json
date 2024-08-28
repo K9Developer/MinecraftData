@@ -1,1 +1,1 @@
-{"name": "minecraft:lapis_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:lapis_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:lapis_block": 1}}]}

@@ -1,1 +1,1 @@
-{"name": "minecraft:dried_kelp_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:dried_kelp_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:dried_kelp_block": 1}}]}

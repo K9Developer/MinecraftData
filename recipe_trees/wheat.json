@@ -1,1 +1,1 @@
-{"name": "minecraft:wheat", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:wheat", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:wheat": 1}}]}

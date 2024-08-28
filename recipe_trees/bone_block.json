@@ -1,1 +1,1 @@
-{"name": "minecraft:bone_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:bone_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:bone_block": 1}}]}
