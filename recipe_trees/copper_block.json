@@ -1,1 +1,1 @@
-{"name": "minecraft:copper_block", "amount": 0.5, "type": "minecraft:crafting_shaped", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:copper_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
