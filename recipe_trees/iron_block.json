@@ -1,1 +1,1 @@
-{"name": "minecraft:iron_block", "amount": 3.0, "type": "minecraft:crafting_shaped", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:iron_block", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}

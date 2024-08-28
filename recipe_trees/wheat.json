@@ -1,1 +1,1 @@
-{"name": "minecraft:wheat", "amount": 3.0, "type": "minecraft:crafting_shaped", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
+{"name": "minecraft:wheat", "amount": 1.0, "type": "minecraft:crafting_shapeless", "paths": [], "base_item_paths": [{"path_data": [], "item_data": {}}]}
