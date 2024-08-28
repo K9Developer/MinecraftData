@@ -1,0 +1,1 @@
+{"name": "minecraft:stone_pressure_plate", "amount": 1, "type": null, "paths": [[{"name": "minecraft:stone", "amount": 2.0, "type": "craft", "paths": [[{"name": "minecraft:cobblestone", "amount": 2.0, "type": "smelt", "paths": []}]]}]], "base_item_paths": [{"path_data": [[0, 0, 0, 0]], "item_data": {"minecraft:cobblestone": 2.0}}]}
