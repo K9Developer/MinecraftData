@@ -39,6 +39,7 @@ jobs:
         import json
         from math import sqrt
         import math
+        import re
         import time
         import requests
         from bs4 import BeautifulSoup
@@ -85,6 +86,39 @@ jobs:
                 print(f"Got block {block_data['name']}")
             return blocks
         
+        def get_item_data(row):
+            """Helper function to fetch item data."""
+            item_data = {}
+            td1 = row.find_all("td")[0]
+            item_data["name"] = td1.text.strip()
+            td2 = row.find_all("td")[1]
+            item_data["mc_id"] = td2.text.strip()
+            wiki_url = "https://minecraft.fandom.com" + td1.find("a")["href"]
+            
+            # Fetch image from wiki page
+            res = requests.get(wiki_url)
+            soup = BeautifulSoup(res.text, "html.parser")
+            figures = soup.find_all("figure", class_="pi-item")
+            figure = None
+            for f in figures:
+                if (t := f.find("a")) is not None:
+                    if t.get("href") is not None:
+                        g = re.search(r"https:\/\/static.wikia.nocookie.net\/minecraft_gamepedia\/images\/.*?\/.*?\/(.*)\.(:?png|jpg)\/revision.*", t["href"])
+                        if g is not None:
+                            group = g.group(1)
+                            if group.lower().startswith(td2.text.strip()):
+                                figure = f
+                                break
+            if figure is None and figures:
+                figure = figures[-1]
+            image_url = figure.find("a")["href"] if figure else None
+            
+            item_data["image_url"] = image_url
+            item_data["type"] = "item"
+            print(f"Got item {item_data['name']}")
+            return item_data
+        
+        
         def get_items():
             print("Getting items")
             url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Java_Edition_data_values&text=%7B%7B%3AJava%20Edition%20data%20values%2FItems%7D%7D"
@@ -95,53 +129,29 @@ jobs:
             print("Got soup")
             table = soup.find("table", attrs={"data-description": "Item IDs"})
             items = []
-            for row in table.find_all("tr")[1:]:
-                item_data = {}
-                td1 = row.find_all("td")[0]
-                item_data["name"] = td1.text.strip()
-                td2 = row.find_all("td")[1]
-                item_data["mc_id"] = td2.text.strip()
-                style_data = td1.find("span")["style"]
-                start = style_data.find("url(") + len("url(")
-                end = style_data.find(")")
-                item_data["image_url"] = style_data[start:end]
-                item_data["positions"] = {
-                    "x": 0,
-                    "y": 0
-                }
-                start = style_data.find("background-position:") + len("background-position:")
-                end = style_data.find("px")    
-                item_data["positions"]["x"] = int(style_data[start:end])
-                start = end + len("px")
-                end = style_data.find("px", start)
-                item_data["positions"]["y"] = int(style_data[start:end])
-                item_data["type"] = "item"
-                items.append(item_data)
-                print(f"Got item {item_data['name']}")
+        
+            # Using ThreadPoolExecutor to parallelize fetching of item data
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                futures = [executor.submit(get_item_data, row) for row in table.find_all("tr")[1:]]
+                for future in as_completed(futures):
+                    item_data = future.result()
+                    items.append(item_data)
         
             return items
         
         def get_image_PIL(item):
-            if item.get("positions") is None:
-                if item["image_url"] not in img_cache:
-                    res = requests.get(item["image_url"])
-                    im = Image.open(BytesIO(res.content))
-                    im.thumbnail((ICON_SIZE, ICON_SIZE))
-                    img_cache[item["image_url"]] = im
-                return img_cache[item["image_url"]]
-            else:
-                if item["image_url"] not in img_cache:
-                    res = requests.get(item["image_url"])
-                    im = Image.open(BytesIO(res.content))
-                    img_cache[item["image_url"]] = im
-                
-                pil_img = img_cache[item["image_url"]].copy()
-                x = -item["positions"]["x"]
-                y = -item["positions"]["y"]
-                width = height = 16
-                pil_img = pil_img.crop((x, y, x + width, y + height)).resize((ICON_SIZE, ICON_SIZE))
-                
-                return pil_img
+            res = requests.get(item["image_url"])
+            im = Image.open(BytesIO(res.content))
+            im = im.convert("RGBA")
+            bbox = im.getbbox()
+            im = im.crop(bbox)
+            new_image = Image.new("RGBA", (ICON_SIZE, ICON_SIZE), (0, 0, 0, 0))
+            im.thumbnail((ICON_SIZE, ICON_SIZE))
+            x_offset = (ICON_SIZE - im.width) // 2
+            y_offset = (ICON_SIZE - im.height) // 2
+            new_image.paste(im, (x_offset, y_offset), im)
+        
+            return new_image
         
         def process_block(item, i, width):
             pil_image = get_image_PIL(item)
