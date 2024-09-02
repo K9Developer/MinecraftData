@@ -38,7 +38,10 @@ jobs:
         import zipfile
         import io
         import json
-
+        
+        # tree_node_cache = {}
+        # base_items_cache = {}
+        
         def format_recipe_key(key):
             if "tag" in key:
                 return "#"+key["tag"]
@@ -59,6 +62,7 @@ jobs:
             keys = recipe["key"]
             format_keys = format_recipe_keys(keys)
             blocks_to_craft = {}
+            # pattern = [format_keys.get(elem, "") for elem in "".join(recipe["pattern"])]
             for elem in "".join(recipe["pattern"]):
                 if format_keys.get(elem) is None:
                     continue
@@ -66,11 +70,17 @@ jobs:
                     blocks_to_craft[format_keys[elem]] += 1
                 else:
                     blocks_to_craft[format_keys[elem]] = 1
-        
+            # return {
+            #     "total_items": blocks_to_craft,
+            #     # "patterns": [pattern]
+            # }
             return blocks_to_craft
         
         def _get_blocks_to_craft_ingredients(recipe, key="ingredients"):
             ingredient_options = []
+        
+            patterns = [] # TODO
+            # ! IMPORTANT ^^^^^^
             for ingredient in recipe[key]:
                 if isinstance(ingredient, list):
                     # For lists, we consider each item as a separate option
@@ -160,14 +170,18 @@ jobs:
             if file.startswith(folder) and file.endswith(".json"):
                 with jar.open(file) as f:
                     recipe = json.load(f)
+        
                     blocks_to_craft = get_blocks_to_craft(recipe)
+        
                     if blocks_to_craft is None:
                         continue
         
                     for rec in blocks_to_craft:
                         recipe_data = {}
                         recipe_data["result"] = recipe["result"]
+                        # recipe_data["blocks_to_craft"] = rec["total_items"]
                         recipe_data["blocks_to_craft"] = rec
+                        # recipe_data["craft_patterns"] = rec["patterns"]
                         recipe_data["type"] = recipe["type"]
                         if recipe["result"]["id"] not in data:  
                             data[recipe["result"]["id"]] = [recipe_data]
@@ -307,7 +321,7 @@ jobs:
                 "minecraft:crimson_hyphae",
                 "minecraft:warped_hyphae",
         ]
-        def generate_tree_node(item, amount, prev_item_buffer, item_type=None):
+        def generate_tree_node(item, amount, prev_item_buffer, item_type=None, current_path=[]):
             if item in prev_item_buffer:
                 return None
         
@@ -325,6 +339,8 @@ jobs:
                 if not tree_node:
                     break
                 items_needed = get_items_needed(option["blocks_to_craft"])
+                # patterns = option["craft_patterns"]
+        
                 for path in expand_items(items_needed):
                     if not tree_node:
                         break
@@ -339,17 +355,6 @@ jobs:
                             
                         if not tree_node:
                             break
-                        # already_in = False
-                        # for path2 in tree_node["paths"]:
-                        #     for path_item2 in path2:
-                        #         if path_item2["name"] == path_item:
-                        #             already_in = True
-                        #             break
-                        #     if already_in:
-                        #         break
-                        # if already_in:
-                        #     print("Already in:", path_item)
-                        #     continue
         
                         bad_item = False
                         for future_option in data[path_item] if data.get(path_item) is not None else []:
@@ -370,6 +375,7 @@ jobs:
         
         
                         if path_item not in data:
+                            # print(item, pattern, current_path + [path_ind] + [ind])
                             # Check if path_item is not already in the other paths
                             tree_node["paths"][path_ind].append({
                                 "name": path_item,
@@ -379,7 +385,7 @@ jobs:
                             })
                         else:
                             prev_item_buffer.append(item)
-                            node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), get_action(option["type"]))
+                            node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), get_action(option["type"]), current_path + [path_ind] + [ind])
                             if node is not None:
                                 tree_node["paths"][path_ind].append(node)
                     path_ind += 1
@@ -413,8 +419,20 @@ jobs:
                                 for ir in item_results:
                                     combined = {
                                         'path_data': pr['path_data'] + ir['path_data'],
-                                        'item_data': {**pr['item_data'], **ir['item_data']}
+                                        'item_data': {}
                                     }
+        
+                                    for k, v in pr['item_data'].items():
+                                        if k in combined['item_data']:
+                                            combined['item_data'][k] += v
+                                        else:
+                                            combined['item_data'][k] = v
+                                    for k, v in ir['item_data'].items():
+                                        if k in combined['item_data']:
+                                            combined['item_data'][k] += v
+                                        else:
+                                            combined['item_data'][k] = v
+        
                                     new_results.append(combined)
                             path_results = new_results
                     results.extend(path_results)
@@ -459,7 +477,7 @@ jobs:
                 continue
             with open(f"recipe_trees/{item.removeprefix('minecraft:')}item.json", "w") as f:
                 json.dump(tree, f)
-
+        
         EOT
         python get_rec.py
 
