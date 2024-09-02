@@ -46,13 +46,19 @@ jobs:
         
         img_cache = {}
         
+        ICON_SIZE = 64
+        
         def get_data(row):
             tds = row.find_all("td")
-            image_url = tds[0].find("img")
-            if image_url.get("data-src") is not None:
-                image_url = image_url["data-src"]
+            image_url = tds[0].find("a")
+            if image_url.get("href") is not None:
+                image_url = image_url["href"]
             else:
-                image_url = image_url["src"]
+                image_url = image_url.find("img")
+                if image_url.get("data-src") is not None:
+                    image_url = image_url["data-src"]
+                else:
+                    image_url = image_url["src"]
             mc_id = tds[1].text
             name = tds[2].text.strip().replace("\\n", "")
             return {
@@ -120,7 +126,7 @@ jobs:
                 if item["image_url"] not in img_cache:
                     res = requests.get(item["image_url"])
                     im = Image.open(BytesIO(res.content))
-                    im.thumbnail((32, 32))
+                    im.thumbnail((ICON_SIZE, ICON_SIZE))
                     img_cache[item["image_url"]] = im
                 return img_cache[item["image_url"]]
             else:
@@ -133,14 +139,14 @@ jobs:
                 x = -item["positions"]["x"]
                 y = -item["positions"]["y"]
                 width = height = 16
-                pil_img = pil_img.crop((x, y, x + width, y + height)).resize((32, 32))
+                pil_img = pil_img.crop((x, y, x + width, y + height)).resize((ICON_SIZE, ICON_SIZE))
                 
                 return pil_img
         
         def process_block(item, i, width):
             pil_image = get_image_PIL(item)
-            x = (i % (width // 32)) * 32
-            y = (i // (width // 32)) * 32
+            x = (i % (width // ICON_SIZE)) * ICON_SIZE
+            y = (i // (width // ICON_SIZE)) * ICON_SIZE
             print(f"Processed block {item['name']}")
             return {
                 "image": pil_image,
@@ -156,8 +162,8 @@ jobs:
         
         def process_item(item, i, width):
             pil_image = get_image_PIL(item)
-            x = (i % (width // 32)) * 32
-            y = (i // (width // 32)) * 32
+            x = (i % (width // ICON_SIZE)) * ICON_SIZE
+            y = (i // (width // ICON_SIZE)) * ICON_SIZE
             print(f"Processed item {item['name']}")
             return {
                 "image": pil_image,
@@ -174,8 +180,8 @@ jobs:
         def generate_data(block_data, item_data):
             full_data = block_data + item_data
             cells = len(full_data)
-            width = int(sqrt(cells)) * 32
-            height = math.ceil(cells / (width // 32)) * 32
+            width = int(sqrt(cells)) * ICON_SIZE
+            height = math.ceil(cells / (width // ICON_SIZE)) * ICON_SIZE
             atlas = Image.new("RGBA", (width, height))
             processed_data = []
         
