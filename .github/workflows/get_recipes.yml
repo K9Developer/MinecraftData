@@ -33,6 +33,12 @@ jobs:
       run: |
         cat << EOT > get_rec.py
 
+        from itertools import product
+        import requests
+        import zipfile
+        import io
+        import json
+
         def format_recipe_key(key):
             if "tag" in key:
                 return "#"+key["tag"]
