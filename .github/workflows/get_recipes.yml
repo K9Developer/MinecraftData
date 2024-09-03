@@ -62,7 +62,6 @@ jobs:
             keys = recipe["key"]
             format_keys = format_recipe_keys(keys)
             blocks_to_craft = {}
-            # pattern = [format_keys.get(elem, "") for elem in "".join(recipe["pattern"])]
             for elem in "".join(recipe["pattern"]):
                 if format_keys.get(elem) is None:
                     continue
@@ -70,17 +69,11 @@ jobs:
                     blocks_to_craft[format_keys[elem]] += 1
                 else:
                     blocks_to_craft[format_keys[elem]] = 1
-            # return {
-            #     "total_items": blocks_to_craft,
-            #     # "patterns": [pattern]
-            # }
             return blocks_to_craft
         
         def _get_blocks_to_craft_ingredients(recipe, key="ingredients"):
             ingredient_options = []
         
-            patterns = [] # TODO
-            # ! IMPORTANT ^^^^^^
             for ingredient in recipe[key]:
                 if isinstance(ingredient, list):
                     # For lists, we consider each item as a separate option
@@ -239,18 +232,19 @@ jobs:
             return premu_expanded(expanded)
         
         def get_action(action):
+            # All items we skipped can be replaced by smelt that will be in paths
             if 'crafting' in action:
                 return "craft"
             elif 'smelting' in action:
                 return "smelt"
             elif 'blasting' in action:
-                return "smelt"
+                return None # skip
             elif 'smoking' in action:
-                return "smelt"
+                return None # skip
             elif 'stonecutting' in action:
                 return "stonecut"
             elif 'campfire_cooking' in action:
-                return "smelt"
+                return None # skip
             else:
                 return "obtain"    
             
@@ -365,29 +359,35 @@ jobs:
                         
                         if bad_item or (item.endswith("dye") and path_item.endswith("dye")):
                             if item_type is None or path_item.endswith("wool") or path_item.endswith("carpet") or path_item.endswith("dye") or path_item.endswith("bed"):
-                                tree_node["paths"][path_ind].append({
-                                    "name": path_item,
-                                    "amount": items_needed[1][ind] * amount,
-                                    "type": get_action(option["type"]),
-                                    "paths": []
-                                })
+                                t = get_action(option["type"])
+                                if t is not None:
+                                    tree_node["paths"][path_ind].append({
+                                        "name": path_item,
+                                        "amount": items_needed[1][ind] * amount,
+                                        "type": t,
+                                        "paths": []
+                                    })
                             continue
         
         
                         if path_item not in data:
                             # print(item, pattern, current_path + [path_ind] + [ind])
                             # Check if path_item is not already in the other paths
-                            tree_node["paths"][path_ind].append({
-                                "name": path_item,
-                                "amount": items_needed[1][ind] * amount,
-                                "type": get_action(option["type"]),
-                                "paths": []
-                            })
+                            t = get_action(option["type"])
+                            if t is not None:
+                                tree_node["paths"][path_ind].append({
+                                    "name": path_item,
+                                    "amount": items_needed[1][ind] * amount,
+                                    "type": t,
+                                    "paths": []
+                                })
                         else:
                             prev_item_buffer.append(item)
-                            node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), get_action(option["type"]), current_path + [path_ind] + [ind])
-                            if node is not None:
-                                tree_node["paths"][path_ind].append(node)
+                            t = get_action(option["type"])
+                            if t is not None:
+                                node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), t, current_path + [path_ind] + [ind])
+                                if node is not None:
+                                    tree_node["paths"][path_ind].append(node)
                     path_ind += 1
         
             if tree_node is not None:
