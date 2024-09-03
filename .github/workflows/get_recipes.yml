@@ -244,9 +244,9 @@ jobs:
             elif 'smelting' in action:
                 return "smelt"
             elif 'blasting' in action:
-                return "blast"
+                return "smelt"
             elif 'smoking' in action:
-                return "smoke"
+                return "smelt"
             elif 'stonecutting' in action:
                 return "stonecut"
             elif 'campfire_cooking' in action:
