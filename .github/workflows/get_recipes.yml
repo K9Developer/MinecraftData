@@ -118,7 +118,7 @@ jobs:
                 else:
                     blocks_to_craft[format_keys[elem]] = 1
             
-            return [blocks_to_craft], get_all_patterns(tags, format_keys, fix_pattern(recipe["pattern"]))
+            return [blocks_to_craft], [{"pattern": p, "amount": recipe["result"].get("count", 1)} for p in get_all_patterns(tags, format_keys, fix_pattern(recipe["pattern"]))]
         
         def _get_blocks_to_craft_ingredients(recipe, key="ingredients"):
             ingredient_options = []
@@ -161,7 +161,9 @@ jobs:
             
             craftings = []
             for pattern, keys in patterns_keys_pairs:
-                craftings.extend(get_all_patterns(tags, keys, pattern))
+                craftings.extend(
+                    [{"pattern": p, "amount": recipe["result"].get("count", 1)} for p in get_all_patterns(tags, keys, pattern)]
+                )
         
             # Convert combinations to list of dictionaries
             result = []
@@ -188,7 +190,7 @@ jobs:
         
             pattern = ["I"] + [" "]*8
             keys = {"I": ingredient}
-            return [{ingredient: 1}], get_all_patterns(tags, keys, pattern)
+            return [{ingredient: 1}], [{"pattern": p, "amount": recipe["result"].get("count", 1)} for p in get_all_patterns(tags, keys, pattern)]
         
         def get_blocks_to_craft(recipe):
             if "pattern" in recipe:
@@ -247,9 +249,7 @@ jobs:
                     for rec in blocks_to_craft[0]:
                         recipe_data = {}
                         recipe_data["result"] = recipe["result"]
-                        # recipe_data["blocks_to_craft"] = rec["total_items"]
                         recipe_data["blocks_to_craft"] = rec
-                        # recipe_data["craft_patterns"] = rec["patterns"]
                         recipe_data["type"] = recipe["type"]
                         if recipe["result"]["id"] not in data:  
                             data[recipe["result"]["id"]] = [recipe_data]
@@ -277,8 +277,6 @@ jobs:
             return new_data
         
         data = fix_data(data)
-        # with open("data.json", "w") as f:
-        #     json.dump(data, f, indent=4)
         
         def get_items_needed(items):
             data = [
@@ -381,23 +379,20 @@ jobs:
                 "minecraft:warped_hyphae",
         ]
         
-        def get_min_batch_amount(parent, item):
-            pass
-        
-        def generate_tree_node(item, amount, prev_item_buffer, item_type=None, current_path=[]):
+        def generate_tree_node(item, amount, prev_item_buffer, item_type=None, current_path=[], parent=None):
             if item in prev_item_buffer:
                 return None
-        
+            
             tree_node = {
                 "name": item,
                 "amount": amount,
-                "batch_amount": amount,
                 "type": item_type,
                 "paths": []
             }
         
             path_ind = 0
             for option in data[item]:
+        
                 if not tree_node:
                     break
                 items_needed = get_items_needed(option["blocks_to_craft"])
@@ -432,7 +427,6 @@ jobs:
                                     tree_node["paths"][path_ind].append({
                                         "name": path_item,
                                         "amount": items_needed[1][ind] * amount,
-                                        "batch_amount": get_min_batch_amount(path, item),
                                         "type": t,
                                         "paths": []
                                     })
@@ -440,14 +434,12 @@ jobs:
         
         
                         if path_item not in data:
-                            # print(item, pattern, current_path + [path_ind] + [ind])
                             # Check if path_item is not already in the other paths
                             t = get_action(option["type"])
                             if t is not None:
                                 tree_node["paths"][path_ind].append({
                                     "name": path_item,
                                     "amount": items_needed[1][ind] * amount,
-                                    "batch_amount": get_min_batch_amount(path, item),
                                     "type": t,
                                     "paths": []
                                 })
@@ -455,14 +447,12 @@ jobs:
                             prev_item_buffer.add(item)
                             t = get_action(option["type"])
                             if t is not None:
-                                node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), t, current_path + [path_ind] + [ind])
+                                node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), t, current_path + [path_ind] + [ind], path)
                                 if node is not None:
                                     tree_node["paths"][path_ind].append(node)
                     path_ind += 1
         
             if tree_node is not None:
-                # tree_node_cache[item] = tree_node
-                # remove empty paths
                 tree_node["paths"] = [path for path in tree_node["paths"] if len(path) > 0]
         
             return tree_node
