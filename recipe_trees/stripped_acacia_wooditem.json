@@ -1,1 +1,1 @@
-{"name": "minecraft:stripped_acacia_wood", "amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:stripped_acacia_wood": 1}}]}
+{"name": "minecraft:stripped_acacia_wood", "amount": 1, "batch_amount": 1, "type": null, "paths": [], "base_item_paths": [{"path_data": [[]], "item_data": {"minecraft:stripped_acacia_wood": 1}}]}
