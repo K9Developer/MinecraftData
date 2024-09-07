@@ -53,23 +53,72 @@ jobs:
         def format_recipe_keys(keys):
             new_keys = {}
             for key, value in keys.items():
-              if type(value) is list: value = value[0] # Important: Sometimes it allows multiple items in the same key, currently we dont handle that
-              new_key = format_recipe_key(value)
-              new_keys[key] = new_key
+                if type(value) is list: value = value[0] # Important: Sometimes it allows multiple items in the same key, currently we dont handle that
+                new_key = format_recipe_key(value)
+                new_keys[key] = new_key
             return new_keys
+        
+        def premu_expanded(expanded):
+            return product(*expanded)
+        
+        def expand_tag_items(tags, items):
+            expanded_items = []
+            for item in items:
+                if item.startswith("#"):
+                    expanded_items.extend(expand_tag_items(tags, tags[item[1:].removeprefix("minecraft:")]))
+                else:
+                    expanded_items.append(item)
+            return expanded_items
+        
+        def get_all_patterns(tags, keys, pattern):
+            pattern = "".join(pattern)
+            new_pattern = []
+            for key in pattern:
+                new_pattern.append(keys.get(key))
+            
+            expanded = []
+            for key, value in keys.items():
+                expanded.append([{key: i} for i in expand_tag_items(tags, [value])])
+        
+            patterns = []
+            for key_values in premu_expanded(expanded):
+                merged_keys = {}
+                for key_value in key_values:
+                    merged_keys.update(key_value)
+        
+                curr_pattern = []
+                for key in pattern:
+                    curr_pattern.append(merged_keys.get(key, ' '))
+                patterns.append(curr_pattern)
+            return patterns
+        
+        def fix_pattern(pattern):
+            new_pattern = []
+            for i in range(3):
+                if i < len(pattern):
+                    for j in range(3):
+                        if j < len(pattern[i]):
+                            new_pattern.append(pattern[i][j])
+                        else:
+                            new_pattern.append(" ")
+                else:
+                    new_pattern.append(" "*3)
+            return new_pattern
         
         def _get_blocks_to_craft_pattern(recipe):
             keys = recipe["key"]
             format_keys = format_recipe_keys(keys)
             blocks_to_craft = {}
-            for elem in "".join(recipe["pattern"]):
+            pattern = "".join(recipe["pattern"])
+            for elem in pattern:
                 if format_keys.get(elem) is None:
                     continue
                 if format_keys[elem] in blocks_to_craft:
                     blocks_to_craft[format_keys[elem]] += 1
                 else:
                     blocks_to_craft[format_keys[elem]] = 1
-            return blocks_to_craft
+            
+            return [blocks_to_craft], get_all_patterns(tags, format_keys, fix_pattern(recipe["pattern"]))
         
         def _get_blocks_to_craft_ingredients(recipe, key="ingredients"):
             ingredient_options = []
@@ -98,6 +147,22 @@ jobs:
             # Generate all possible combinations
             all_combinations = list(product(*ingredient_options))
             
+            patterns_keys_pairs = []
+            for combination in all_combinations:
+                pattern = []
+                keys = {}
+                for i in range(9):
+                    if i < len(combination):
+                        pattern.append(str(i))
+                        keys[str(i)] = combination[i]
+                    else:
+                        pattern.append(" ")
+                patterns_keys_pairs.append((pattern, keys))
+            
+            craftings = []
+            for pattern, keys in patterns_keys_pairs:
+                craftings.extend(get_all_patterns(tags, keys, pattern))
+        
             # Convert combinations to list of dictionaries
             result = []
             for combination in all_combinations:
@@ -109,26 +174,31 @@ jobs:
                         combo_dict[item] = 1
                 result.append(combo_dict)
             
-            return result
+            return result, craftings
         
         def _get_blocks_to_craft_ingredient(recipe):
+        
             ingredient = recipe["ingredient"]
-            if "tag" in ingredient:
-                return {format_recipe_key(ingredient["tag"]): 1}
-            elif "item" in ingredient:
-                return {format_recipe_key(ingredient["item"]): 1}
+            if "tag" in ingredient and type(ingredient) is dict:
+                ingredient = format_recipe_key(ingredient["tag"])
+            elif "item" in ingredient and type(ingredient) is dict:
+                ingredient = format_recipe_key(ingredient["item"])
             else:
-                return {ingredient: 1}
+                ingredient = ingredient
+        
+            pattern = ["I"] + [" "]*8
+            keys = {"I": ingredient}
+            return [{ingredient: 1}], get_all_patterns(tags, keys, pattern)
         
         def get_blocks_to_craft(recipe):
             if "pattern" in recipe:
-                return [_get_blocks_to_craft_pattern(recipe)]
+                return _get_blocks_to_craft_pattern(recipe)
             elif "ingredients" in recipe:
                 return _get_blocks_to_craft_ingredients(recipe)
             elif "ingredient" in recipe and type(recipe["ingredient"]) is list:
                 return _get_blocks_to_craft_ingredients(recipe, "ingredient")
             elif "ingredient" in recipe:
-                return [_get_blocks_to_craft_ingredient(recipe)]
+                return _get_blocks_to_craft_ingredient(recipe)
             else:
                 return None
         
@@ -158,7 +228,7 @@ jobs:
         tags = get_version_tags(jar)
         data = {}
         folder = "data/minecraft/recipe"
-        recipes = []
+        recipes = {}
         for file in jar.namelist():
             if file.startswith(folder) and file.endswith(".json"):
                 with jar.open(file) as f:
@@ -169,7 +239,12 @@ jobs:
                     if blocks_to_craft is None:
                         continue
         
-                    for rec in blocks_to_craft:
+                    if "result" in recipe: 
+                        if recipe["result"]["id"] not in recipes:
+                            recipes[recipe["result"]["id"]] = []
+                        recipes[recipe["result"]["id"]].extend(blocks_to_craft[1])
+        
+                    for rec in blocks_to_craft[0]:
                         recipe_data = {}
                         recipe_data["result"] = recipe["result"]
                         # recipe_data["blocks_to_craft"] = rec["total_items"]
@@ -180,7 +255,9 @@ jobs:
                             data[recipe["result"]["id"]] = [recipe_data]
                         else:
                             data[recipe["result"]["id"]].append(recipe_data)
-                    
+        
+        with open("recipe_trees/crafts.json", "w") as f:
+            json.dump(recipes, f)
         
         def fix_data(data):
             new_data = {}
@@ -203,15 +280,6 @@ jobs:
         # with open("data.json", "w") as f:
         #     json.dump(data, f, indent=4)
         
-        def expand_tag_items(tags, items):
-            expanded_items = []
-            for item in items:
-                if item.startswith("#"):
-                    expanded_items.extend(expand_tag_items(tags, tags[item[1:].removeprefix("minecraft:")]))
-                else:
-                    expanded_items.append(item)
-            return expanded_items
-        
         def get_items_needed(items):
             data = [
                 [], []
@@ -220,9 +288,6 @@ jobs:
                 data[0].append(item)
                 data[1].append(amount)
             return data
-        
-        def premu_expanded(expanded):
-            return product(*expanded)
         
         def expand_items(items):
         
@@ -315,15 +380,18 @@ jobs:
                 "minecraft:crimson_hyphae",
                 "minecraft:warped_hyphae",
         ]
+        
+        def get_min_batch_amount(parent, item):
+            pass
+        
         def generate_tree_node(item, amount, prev_item_buffer, item_type=None, current_path=[]):
             if item in prev_item_buffer:
                 return None
         
-            
-        
             tree_node = {
                 "name": item,
                 "amount": amount,
+                "batch_amount": amount,
                 "type": item_type,
                 "paths": []
             }
@@ -364,6 +432,7 @@ jobs:
                                     tree_node["paths"][path_ind].append({
                                         "name": path_item,
                                         "amount": items_needed[1][ind] * amount,
+                                        "batch_amount": get_min_batch_amount(path, item),
                                         "type": t,
                                         "paths": []
                                     })
@@ -378,11 +447,12 @@ jobs:
                                 tree_node["paths"][path_ind].append({
                                     "name": path_item,
                                     "amount": items_needed[1][ind] * amount,
+                                    "batch_amount": get_min_batch_amount(path, item),
                                     "type": t,
                                     "paths": []
                                 })
                         else:
-                            prev_item_buffer.append(item)
+                            prev_item_buffer.add(item)
                             t = get_action(option["type"])
                             if t is not None:
                                 node = generate_tree_node(path_item, items_needed[1][ind] * amount, prev_item_buffer.copy(), t, current_path + [path_ind] + [ind])
@@ -444,13 +514,13 @@ jobs:
             # Combine duplicate items and sort path_data
             for path in all_paths:
                 path['item_data'] = {k: sum(v for item, v in path['item_data'].items() if item == k) 
-                                     for k in set(path['item_data'])}
+                                        for k in set(path['item_data'])}
                 path['path_data'].sort()
         
             return all_paths
         
         def get_item_tree(item):
-            tree = generate_tree_node(item, 1, [])
+            tree = generate_tree_node(item, 1, set())
             if tree is None:
                 return None
             tree["base_item_paths"] = get_base_items(tree)
