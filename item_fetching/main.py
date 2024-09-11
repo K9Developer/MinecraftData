@@ -124,7 +124,9 @@ def main():
     ordered_items = []
     with open(java_files[0], "r") as f:
         data = f.read()
-        ordered_items = [i.lower() for i in re.findall(r"\s*output.accept\(Items\.(.*)\);", data)]
+        for i in re.findall(r"\s*output.accept\(Items\.(.*)\);", data):
+            if i.lower() not in ordered_items:
+                ordered_items.append(i.lower())
 
     block_data = get_blocks()
     item_data = get_items()
