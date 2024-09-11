@@ -119,6 +119,7 @@ def main():
     print("🚀 Starting Minecraft Atlas Generator")
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
+    os.system("decompilermc -mcv snap -s client -d cfr")
     java_files = glob.glob("src/**/CreativeModeTabs.java", recursive=True)
     ordered_items = []
     with open(java_files[0], "r") as f:
