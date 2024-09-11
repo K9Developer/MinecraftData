@@ -203,6 +203,7 @@ def main():
     with open("../items/atlas_metadata.json", "w") as f:
         json.dump(metadata, f, indent=4)
 
+    print("[i] The CWD is", os.path.dirname(os.path.realpath(__file__)))
     print("✅ Minecraft Atlas Generator completed successfully!")
 
 
