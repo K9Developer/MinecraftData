@@ -181,7 +181,7 @@ def main():
                 current_offset_y += ICON_SIZE
 
     print("💾 Saving atlas image...")
-    atlas_image.save("atlas.png")
+    atlas_image.save("items/atlas.png")
 
     # Sorting metadata
     print("🔍 Sorting metadata...")
@@ -199,7 +199,7 @@ def main():
             new_metadata.append(data)
 
     print("📝 Writing metadata...")
-    with open("atlas_metadata.json", "w") as f:
+    with open("items/atlas_metadata.json", "w") as f:
         json.dump(metadata, f, indent=4)
 
     print("✅ Minecraft Atlas Generator completed successfully!")
