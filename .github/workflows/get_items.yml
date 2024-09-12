@@ -32,12 +32,9 @@ jobs:
       run: |
         mkdir -p "items"
 
-    - name: Change CWD
-      run: |
-        cd item_fetching
-
     - name: Run main.py script
       run: |
+        cd item_fetching
         python main.py
 
     - name: Commit and push changes
