@@ -121,12 +121,24 @@ def main():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     os.system("python decompilermc.py -mcv snap -s client -d cfr")
     java_files = glob.glob("src/**/CreativeModeTabs.java", recursive=True)
-    ordered_items = []
+    item_cats = {}
+    curr_cat = None
     with open(java_files[0], "r") as f:
-        data = f.read()
-        for i in re.findall(r"\s*output.accept\(Items\.(.*)\);", data):
-            if i.lower() not in ordered_items:
-                ordered_items.append(i.lower())
+
+        for line in f.readlines():
+            cat_match = re.findall(r"^\s*Registry\.register\(registry, (\w*), .*", line)
+            if len(cat_match):
+                item_cats[cat_match[0]] = []
+                curr_cat = cat_match[0]
+            else:
+                if curr_cat in item_cats:
+                    item_cats[curr_cat].extend([i.lower() for i in re.findall(r"\s*output.accept\(Items\.(.*)\);", line)])
+
+    ordered_items = item_cats["BUILDING_BLOCKS"]
+    ordered_items.extend([i for i in item_cats["COLORED_BLOCKS"] if i not in ordered_items])
+    ordered_items.extend([i for i in item_cats["NATURAL_BLOCKS"] if i not in ordered_items])
+    ordered_items.extend([i for i in item_cats["FUNCTIONAL_BLOCKS"] if i not in ordered_items])
+    ordered_items.extend([i for i in item_cats["REDSTONE_BLOCKS"] if i not in ordered_items])
 
     block_data = get_blocks()
     item_data = get_items()
