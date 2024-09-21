@@ -120,7 +120,7 @@ def main():
     print("🚀 Starting Minecraft Atlas Generator")
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    # os.system("python decompilermc.py -mcv snap -s client -d cfr")
+    os.system("python decompilermc.py -mcv snap -s client -d cfr")
     java_files = glob.glob("src/**/CreativeModeTabs.java", recursive=True)
     item_cats = {}
     curr_cat = None
