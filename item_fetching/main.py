@@ -171,6 +171,11 @@ def main():
                     response = session.get(img_url)
                     img = Image.open(BytesIO(response.content)).convert("RGBA")
                     img.thumbnail((ICON_SIZE, ICON_SIZE), Image.NEAREST)
+                    off_x = (ICON_SIZE - img.width) // 2
+                    off_y = (ICON_SIZE - img.height) // 2
+                    new_img = Image.new("RGBA", (ICON_SIZE, ICON_SIZE), (0, 0, 0, 0))
+                    new_img.paste(img, (off_x, off_y), img)
+                    img = new_img
                 
                 atlas_image.paste(img, (current_offset_x, current_offset_y))
                 metadata.append({
