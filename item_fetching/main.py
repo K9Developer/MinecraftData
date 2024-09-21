@@ -89,7 +89,8 @@ def get_item_data(row):
     td1, td2 = row.find_all("td")[:2]
     name = td1.text.strip()
     mc_id = td2.text.strip()
-    return {"name": name, "mc_id": mc_id, "type": "item"}
+    link = td1.find("a").get("href")
+    return {"name": name, "mc_id": mc_id, "link": "https://minecraft.fandom.com"+link, "type": "item"}
 
 
 def process_item(item: Dict[str, Any], z: zipfile.ZipFile) -> Dict[str, Any]:
@@ -119,7 +120,7 @@ def main():
     print("🚀 Starting Minecraft Atlas Generator")
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    os.system("python decompilermc.py -mcv snap -s client -d cfr")
+    # os.system("python decompilermc.py -mcv snap -s client -d cfr")
     java_files = glob.glob("src/**/CreativeModeTabs.java", recursive=True)
     item_cats = {}
     curr_cat = None
@@ -139,7 +140,6 @@ def main():
     ordered_items.extend([i for i in item_cats["NATURAL_BLOCKS"] if i not in ordered_items])
     ordered_items.extend([i for i in item_cats["FUNCTIONAL_BLOCKS"] if i not in ordered_items])
     ordered_items.extend([i for i in item_cats["REDSTONE_BLOCKS"] if i not in ordered_items])
-
     block_data = get_blocks()
     item_data = get_items()
 
@@ -161,20 +161,30 @@ def main():
                 result = future.result()
                 item, img = result["item"], result["img"]
                 print(f"📦 Processing item {i + 1}/{len(item_data)}: {item['mc_id']}")
-                if img:
-                    atlas_image.paste(img, (current_offset_x, current_offset_y))
-                    metadata.append({
-                        "name": item["name"],
-                        "id": item["mc_id"],
-                        "type": item["type"],
-                        "offsetX": current_offset_x,
-                        "offsetY": current_offset_y
-                    })
-                    current_offset_x += ICON_SIZE
-                    if current_offset_x >= width:
-                        current_offset_x = 0
-                        current_offset_y += ICON_SIZE
-
+                
+                if not img:
+                    print(f"📦 Processing item {i + 1}/{len(item_data)}: {item['mc_id']} - Fetching from wiki")
+                    res = session.get(item["link"])
+                    soup = BeautifulSoup(res.text, "html.parser")
+                    img = soup.find("figure", class_="pi-item pi-image").find("a")
+                    img_url = img.get("href")
+                    response = session.get(img_url)
+                    img = Image.open(BytesIO(response.content)).convert("RGBA")
+                    img.thumbnail((ICON_SIZE, ICON_SIZE), Image.NEAREST)
+                
+                atlas_image.paste(img, (current_offset_x, current_offset_y))
+                metadata.append({
+                    "name": item["name"],
+                    "id": item["mc_id"],
+                    "type": item["type"],
+                    "offsetX": current_offset_x,
+                    "offsetY": current_offset_y
+                })
+                current_offset_x += ICON_SIZE
+                if current_offset_x >= width:
+                    current_offset_x = 0
+                    current_offset_y += ICON_SIZE
+                    
     print("🧱 Processing blocks...")
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(process_block, block) for block in block_data]
@@ -215,7 +225,7 @@ def main():
 
     print("📝 Writing metadata...")
     with open("../items/atlas_metadata.json", "w") as f:
-        json.dump(new_metadata, f, indent=4)
+        json.dump(metadata, f, indent=4)
 
     print("[i] The CWD is", os.path.dirname(os.path.realpath(__file__)))
     print("✅ Minecraft Atlas Generator completed successfully!")
