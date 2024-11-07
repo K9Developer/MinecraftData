@@ -18,14 +18,6 @@ TIMEOUT = 10
 
 # Configure session for connection pooling
 session = requests.Session()
-adapter = requests.adapters.HTTPAdapter(
-    pool_connections=MAX_WORKERS,
-    pool_maxsize=MAX_WORKERS,
-    max_retries=3,
-    pool_block=True
-)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
 
 def get_item_name(item, item_keys):
     if f"item.minecraft.{item}" in item_keys:
@@ -56,8 +48,7 @@ def try_fetch_icon(url):
         if response.status_code == 200:
             return url, response.content
     except requests.exceptions.RequestException:
-        pass
-    return None, None
+        return None, None
 
 def fetch_item_parallel(args):
     item, item_keys, total_items, current_item = args
@@ -98,7 +89,6 @@ def fetch_item_parallel(args):
         ])
     
     for url in urls:
-        print(url)
         item_data["icon"], item_data["content"] = try_fetch_icon(url)
         if item_data["content"]:
             break
