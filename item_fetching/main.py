@@ -102,6 +102,7 @@ def fetch_item_parallel(args):
         futures = [executor.submit(try_fetch_icon, url) for url in urls]
         for future in as_completed(futures):
             url, content = future.result()
+            print(url)
             if content:
                 item_data["icon"] = url
                 item_data["content"] = content
@@ -181,7 +182,7 @@ def main():
                 fetch_item_parallel, 
                 (item, item_keys, total_items, idx + 1)
             ) 
-            for idx, item in enumerate(ordered_items)
+            for idx, item in enumerate([ordered_items[0]])
         ]
         for future in as_completed(futures):
             item_data_list.append(future.result())
