@@ -5,6 +5,8 @@ import math
 import os
 import re
 import zipfile
+import random
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 import requests
@@ -13,11 +15,22 @@ from io import BytesIO
 
 # Constants
 ICON_SIZE = 64
-MAX_WORKERS = 20
+MAX_WORKERS = 10  # Slightly reduced concurrency
 TIMEOUT = 10
 
-# Configure session for connection pooling
+# Configure session for connection pooling and human-like headers
 session = requests.Session()
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Connection": "keep-alive"
+}
+session.headers.update(headers)
+
+# Add a random delay function to mimic human behavior
+def random_delay(min_delay=0.5, max_delay=2.0):
+    time.sleep(random.uniform(min_delay, max_delay))
 
 def get_item_name(item, item_keys):
     if f"item.minecraft.{item}" in item_keys:
@@ -29,13 +42,16 @@ def get_item_name(item, item_keys):
 def fetch_versions():
     print("📥 Fetching Minecraft version data...")
     versions_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+    random_delay()  # Random delay before request
     versions = session.get(versions_url, timeout=TIMEOUT).json()
     latest_version = versions["versions"][0]
+    random_delay()  # Another random delay before the next request
     version = session.get(latest_version["url"], timeout=TIMEOUT).json()
     return version["downloads"]["client"]["url"]
 
 def load_language_file(client_url):
     print("📖 Loading language files...")
+    random_delay()  # Delay before loading the language file
     client = session.get(client_url, timeout=TIMEOUT).content
     with zipfile.ZipFile(io.BytesIO(client)) as jar:
         en_us_json = json.loads(jar.read("assets/minecraft/lang/en_us.json"))
@@ -43,14 +59,12 @@ def load_language_file(client_url):
             if k.startswith(("item.minecraft.", "block.minecraft."))}
 
 def try_fetch_icon(url):
-    # try:
+    random_delay()  # Random delay before request
     response = session.get(url)
     if response.status_code == 200:
         return url, response.content
     else:
         print(url, response.status_code, response.content)
-    # except requests.exceptions.RequestException:
-    #     pass
     return None, None
 
 def fetch_item_parallel(args):
@@ -170,10 +184,11 @@ def main():
                 fetch_item_parallel, 
                 (item, item_keys, total_items, idx + 1)
             ) 
-            for idx, item in enumerate([ordered_items[0]])
+            for idx, item in enumerate(ordered_items)
         ]
         for future in as_completed(futures):
             item_data_list.append(future.result())
+            random_delay(1, 3)  # Random delay after processing each item
     
     # Create atlas
     cells = len(ordered_items)
