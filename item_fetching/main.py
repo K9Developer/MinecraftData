@@ -6,235 +6,222 @@ import os
 import re
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any
-
+from functools import lru_cache
 import requests
-from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 
+# Constants
 ICON_SIZE = 64
-wiki_atlas = None
-spawn_eggs_soup = None
+MAX_WORKERS = 20
+TIMEOUT = 10
+
+# Configure session for connection pooling
 session = requests.Session()
+adapter = requests.adapters.HTTPAdapter(
+    pool_connections=MAX_WORKERS,
+    pool_maxsize=MAX_WORKERS,
+    max_retries=3,
+    pool_block=True
+)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
 
+def get_item_name(item, item_keys):
+    if f"item.minecraft.{item}" in item_keys:
+        return item_keys[f"item.minecraft.{item}"], "item"
+    elif f"block.minecraft.{item}" in item_keys:
+        return item_keys[f"block.minecraft.{item}"], "block"
+    return None, None
 
-def get_spawn_egg_data(item):
-    global wiki_atlas, spawn_eggs_soup
+def fetch_versions():
+    print("📥 Fetching Minecraft version data...")
+    versions_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+    versions = session.get(versions_url, timeout=TIMEOUT).json()
+    latest_version = versions["versions"][0]
+    version = session.get(latest_version["url"], timeout=TIMEOUT).json()
+    return version["downloads"]["client"]["url"]
 
-    if spawn_eggs_soup is None:
-        url = "https://minecraft.fandom.com/wiki/Spawn_Egg"
-        response = session.get(url)
-        spawn_eggs_soup = BeautifulSoup(response.text, "html.parser")
+def load_language_file(client_url):
+    print("📖 Loading language files...")
+    client = session.get(client_url, timeout=TIMEOUT).content
+    with zipfile.ZipFile(io.BytesIO(client)) as jar:
+        en_us_json = json.loads(jar.read("assets/minecraft/lang/en_us.json"))
+    return {k: v for k, v in en_us_json.items() 
+            if k.startswith(("item.minecraft.", "block.minecraft."))}
 
-    header = spawn_eggs_soup.find("span", class_="mw-headline", id="Data_values")
-    h2 = header.find_parent("h2")
-    table = h2.find_next_sibling("table")
-    for row in table.find_all("tr")[1:]:
-        tds = row.find_all("td")
-        if tds[1].text == item["mc_id"]:
-            img_span = tds[0].find("span")
-            bg_img_url = img_span["style"].split("url(")[1].split(")")[0]
-            bg_pos = img_span["style"].split("background-position:")[1].split(";")[0]
-            offset_x = -int(bg_pos.split(" ")[0].replace("px", ""))
-            offset_y = -int(bg_pos.split(" ")[1].replace("px", ""))
-            if wiki_atlas is None:
-                response = session.get(bg_img_url)
-                wiki_atlas = Image.open(BytesIO(response.content)).convert("RGBA")
-            img = wiki_atlas.crop((offset_x, offset_y, offset_x + 16, offset_y + 16))
-            img = img.resize((ICON_SIZE, ICON_SIZE), Image.NEAREST)
-            return img
-
-    return None
-
-
-def get_data(row):
-    tds = row.find_all("td")
-    image_url = tds[0].find("a")
-    if image_url.get("href"):
-        image_url = image_url["href"]
-    else:
-        image_url = image_url.find("img")
-        image_url = image_url.get("data-src") or image_url["src"]
-    mc_id = tds[1].text
-    name = tds[2].text.strip().replace("\\n", "")
-    return {"image_url": image_url, "mc_id": mc_id, "name": name}
-
-
-def get_blocks():
-    print("🧱 Getting blocks...")
-    url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Java_Edition_data_values&text=%7B%7B%3AJava%20Edition%20data%20values%2FBlocks%7D%7D"
-    response = session.get(url)
-    data = response.json()
-    soup = BeautifulSoup(data["parse"]["text"]["*"], "html.parser")
-    table = soup.find("table", attrs={"data-description": "Block IDs"})
-    return [dict(get_data(row), type="block") for row in table.find_all("tr")[1:]]
-
-
-def get_items():
-    print("🔧 Getting items...")
-    url = "https://minecraft.fandom.com/api.php?action=parse&format=json&prop=text%7Cmodules%7Cjsconfigvars&title=Java_Edition_data_values&text=%7B%7B%3AJava%20Edition%20data%20values%2FItems%7D%7D"
-    response = session.get(url)
-    data = response.json()
-    soup = BeautifulSoup(data["parse"]["text"]["*"], "html.parser")
-    table = soup.find("table", attrs={"data-description": "Item IDs"})
-    items = []
-    for row in table.find_all("tr")[1:]:
-        item_data = get_item_data(row)
-        items.append(item_data)
-    return items
-
-
-def get_item_data(row):
-    td1, td2 = row.find_all("td")[:2]
-    name = td1.text.strip()
-    mc_id = td2.text.strip()
-    link = td1.find("a").get("href")
-    return {"name": name, "mc_id": mc_id, "link": "https://minecraft.fandom.com"+link, "type": "item"}
-
-
-def process_item(item: Dict[str, Any], z: zipfile.ZipFile) -> Dict[str, Any]:
+def try_fetch_icon(url):
     try:
-        with z.open(f"assets/minecraft/textures/item/{item['mc_id']}.png") as f:
-            img = Image.open(io.BytesIO(f.read())).convert("RGBA")
-            aspect_ratio = img.width / img.height
-            img = img.resize((ICON_SIZE, int(ICON_SIZE / aspect_ratio)), Image.NEAREST)
-    except KeyError:
-        if item['mc_id'].endswith("_spawn_egg"):
-            img = get_spawn_egg_data(item)
-        else:
-            img = None
+        response = session.get(url, timeout=TIMEOUT)
+        if response.status_code == 200:
+            return url, response.content
+    except requests.exceptions.RequestException:
+        pass
+    return None, None
 
-    return {"item": item, "img": img}
+def fetch_item_parallel(args):
+    item, item_keys, total_items, current_item = args
+    print(f"📦 Processing item {current_item}/{total_items}: {item}")
+    
+    item_data = {
+        "name": item,
+        "mc_id": item,
+        "icon": None,
+        "type": "item",
+        "content": None
+    }
+    
+    # Clean up item name
+    clean_item = item.replace("infested_", "").replace("_smithing_template", "").replace("waxed_", "")
+    if clean_item == "cut_standstone_slab": 
+        clean_item = "cut_sandstone_slab"
+    
+    # Get item name and type
+    name, type_ = get_item_name(clean_item, item_keys)
+    if name:
+        item_data["name"] = name
+        item_data["type"] = type_
+    
+    # Generate possible URLs
+    item_id = '_'.join(a.title() for a in clean_item.split('_'))
+    urls = [
+        f"https://minecraft.wiki/images/Invicon_{item_id}.png",
+        f"https://minecraft.wiki/images/Invicon_{item_id}.gif",
+        f"https://minecraft.wiki/images/ItemSprite_{clean_item.replace('_', '-')}.png"
+    ]
+    
+    if name:
+        formatted_name = name.replace(" ", "_")
+        urls.extend([
+            f"https://minecraft.wiki/images/Invicon_{formatted_name}.png",
+            f"https://minecraft.wiki/images/Invicon_{formatted_name}.gif"
+        ])
+    
+    # Try all URLs in parallel
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(try_fetch_icon, url) for url in urls]
+        for future in as_completed(futures):
+            url, content = future.result()
+            if content:
+                item_data["icon"] = url
+                item_data["content"] = content
+                break
+    
+    if not item_data["content"]:
+        print(f"❌ No icon found for {item}")
+    
+    return item_data
 
-
-def process_block(block: Dict[str, Any]) -> Dict[str, Any]:
-    response = session.get(block["image_url"])
-    img = Image.open(BytesIO(response.content)).convert("RGBA")
-    img.thumbnail((ICON_SIZE, ICON_SIZE), Image.NEAREST)
-
-    return {"block": block, "img": img}
-
+def process_image(content):
+    """Process image content to exact ICON_SIZE"""
+    if not content:
+        return Image.new("RGBA", (ICON_SIZE, ICON_SIZE), (0, 0, 0, 0))
+    
+    # Open and convert to RGBA
+    img = Image.open(BytesIO(content)).convert("RGBA")
+    
+    # Create a new image with exact ICON_SIZE dimensions
+    new_img = Image.new("RGBA", (ICON_SIZE, ICON_SIZE), (0, 0, 0, 0))
+    
+    # Resize image maintaining aspect ratio
+    aspect = img.width / img.height
+    if aspect > 1:
+        new_width = ICON_SIZE
+        new_height = int(ICON_SIZE / aspect)
+    else:
+        new_height = ICON_SIZE
+        new_width = int(ICON_SIZE * aspect)
+    
+    img = img.resize((new_width, new_height), Image.Resampling.NEAREST)
+    
+    # Center the image
+    x_offset = (ICON_SIZE - new_width) // 2
+    y_offset = (ICON_SIZE - new_height) // 2
+    
+    # Paste onto new image
+    new_img.paste(img, (x_offset, y_offset), img)
+    
+    return new_img
 
 def main():
     print("🚀 Starting Minecraft Atlas Generator")
-
+    
+    # Load item categories
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     os.system("python decompilermc.py -mcv snap -s client -d cfr")
     java_files = glob.glob("src/**/CreativeModeTabs.java", recursive=True)
+    
+    print("📑 Reading creative mode tabs...")
     item_cats = {}
     curr_cat = None
     with open(java_files[0], "r") as f:
-
-        for line in f.readlines():
+        for line in f:
             cat_match = re.findall(r"^\s*Registry\.register\(registry, (\w*), .*", line)
-            if len(cat_match):
-                item_cats[cat_match[0]] = []
+            if cat_match:
                 curr_cat = cat_match[0]
-            else:
-                if curr_cat in item_cats:
-                    item_cats[curr_cat].extend([i.lower() for i in re.findall(r"\s*output.accept\(Items\.(.*)\);", line)])
+                item_cats[curr_cat] = []
+            elif curr_cat in item_cats:
+                items = re.findall(r"\s*output.accept\(Items\.(.*)\);", line)
+                item_cats[curr_cat].extend(item.lower() for item in items)
 
-    ordered_items = item_cats["BUILDING_BLOCKS"]
-    ordered_items.extend([i for i in item_cats["COLORED_BLOCKS"] if i not in ordered_items])
-    ordered_items.extend([i for i in item_cats["NATURAL_BLOCKS"] if i not in ordered_items])
-    ordered_items.extend([i for i in item_cats["FUNCTIONAL_BLOCKS"] if i not in ordered_items])
-    ordered_items.extend([i for i in item_cats["REDSTONE_BLOCKS"] if i not in ordered_items])
-    block_data = get_blocks()
-    item_data = get_items()
-
-    cells = len(block_data) + len(item_data)
+    # Get unique ordered items
+    ordered_items = list(dict.fromkeys(item for items in item_cats.values() for item in items))
+    total_items = len(ordered_items)
+    print(f"📋 Found {total_items} unique items")
+    
+    # Fetch version data and language file
+    client_url = fetch_versions()
+    item_keys = load_language_file(client_url)
+    
+    print("🖼️ Fetching item data in parallel...")
+    item_data_list = []
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [
+            executor.submit(
+                fetch_item_parallel, 
+                (item, item_keys, total_items, idx + 1)
+            ) 
+            for idx, item in enumerate(ordered_items)
+        ]
+        for future in as_completed(futures):
+            item_data_list.append(future.result())
+    
+    # Create atlas
+    cells = len(ordered_items)
     width = int(math.sqrt(cells)) * ICON_SIZE
     height = math.ceil(cells / (width // ICON_SIZE)) * ICON_SIZE
     atlas_image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-
-    print("🖼️ Creating atlas image...")
-    current_offset_x = 0
-    current_offset_y = 0
+    
+    # Process images and create metadata
+    print("💾 Creating atlas and metadata...")
     metadata = []
-
-    file_path = glob.glob("versions/*/client.jar")[0]
-    with zipfile.ZipFile(file_path, "r") as z:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(process_item, item, z) for item in item_data]
-            for i, future in enumerate(as_completed(futures)):
-                result = future.result()
-                item, img = result["item"], result["img"]
-                print(f"📦 Processing item {i + 1}/{len(item_data)}: {item['mc_id']}")
-                
-                if not img:
-                    print(f"📦 Processing item {i + 1}/{len(item_data)}: {item['mc_id']} - Fetching from wiki")
-                    res = session.get(item["link"])
-                    soup = BeautifulSoup(res.text, "html.parser")
-                    img = soup.find("figure", class_="pi-item pi-image").find("a")
-                    img_url = img.get("href")
-                    response = session.get(img_url)
-                    img = Image.open(BytesIO(response.content)).convert("RGBA")
-                    img.thumbnail((ICON_SIZE, ICON_SIZE), Image.NEAREST)
-                    off_x = (ICON_SIZE - img.width) // 2
-                    off_y = (ICON_SIZE - img.height) // 2
-                    new_img = Image.new("RGBA", (ICON_SIZE, ICON_SIZE), (0, 0, 0, 0))
-                    new_img.paste(img, (off_x, off_y), img)
-                    img = new_img
-                
-                atlas_image.paste(img, (current_offset_x, current_offset_y))
-                metadata.append({
-                    "name": item["name"],
-                    "id": item["mc_id"],
-                    "type": item["type"],
-                    "offsetX": current_offset_x,
-                    "offsetY": current_offset_y
-                })
-                current_offset_x += ICON_SIZE
-                if current_offset_x >= width:
-                    current_offset_x = 0
-                    current_offset_y += ICON_SIZE
-                    
-    print("🧱 Processing blocks...")
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(process_block, block) for block in block_data]
-        for i, future in enumerate(as_completed(futures)):
-            result = future.result()
-            block, img = result["block"], result["img"]
-            print(f"🧱 Processing block {i + 1}/{len(block_data)}: {block['mc_id']}")
-            atlas_image.paste(img, (current_offset_x, current_offset_y))
-            metadata.append({
-                "name": block["name"],
-                "id": block["mc_id"],
-                "type": block["type"],
-                "offsetX": current_offset_x,
-                "offsetY": current_offset_y
-            })
-            current_offset_x += ICON_SIZE
-            if current_offset_x >= width:
-                current_offset_x = 0
-                current_offset_y += ICON_SIZE
-
+    x, y = 0, 0
+    for idx, item_data in enumerate(item_data_list, 1):
+        print(f"🎨 Adding item to atlas ({idx}/{total_items}): {item_data['name']}")
+        img = process_image(item_data["content"])
+        atlas_image.paste(img, (x, y))
+        metadata.append({
+            "name": item_data["name"],
+            "id": item_data["mc_id"],
+            "type": item_data["type"],
+            "offsetX": x,
+            "offsetY": y
+        })
+        x += ICON_SIZE
+        if x >= width:
+            x = 0
+            y += ICON_SIZE
+    
     print("💾 Saving atlas image...")
-    atlas_image.save("../items/atlas.png")
-
-    # Sorting metadata
-    print("🔍 Sorting metadata...")
-    new_metadata = []
-    added_ids = set()
-    for item in ordered_items:
-        for data in metadata:
-            if data["id"] == item:
-                new_metadata.append(data)
-                added_ids.add(item)
-                break
-    # Adding missing items
-    for data in metadata:
-        if data["id"] not in added_ids:
-            new_metadata.append(data)
-
+    atlas_image.save("../items/atlas.png", optimize=True)
+    
     print("📝 Writing metadata...")
     with open("../items/atlas_metadata.json", "w") as f:
-        json.dump(new_metadata, f)
-
-    print("[i] The CWD is", os.path.dirname(os.path.realpath(__file__)))
-    print("✅ Minecraft Atlas Generator completed successfully!")
-
+        json.dump(metadata, f, indent=4)
+    
+    print(f"✅ Atlas generation complete! Created atlas with {total_items} items")
+    print(f"   Atlas dimensions: {width}x{height} pixels")
+    print(f"   Output files: atlas.png and atlas_metadata.json")
 
 if __name__ == "__main__":
     main()
