@@ -216,6 +216,7 @@ def main():
     atlas_image.save("../items/atlas.png", optimize=True)
     
     print("📝 Writing metadata...")
+    metadata = sorted(metadata, key=lambda x: ordered_items.index(x["id"]))
     with open("../items/atlas_metadata.json", "w") as f:
         json.dump(metadata, f, indent=4)
     
