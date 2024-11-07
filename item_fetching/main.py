@@ -97,16 +97,11 @@ def fetch_item_parallel(args):
             f"https://minecraft.wiki/images/Invicon_{formatted_name}.gif"
         ])
     
-    # Try all URLs in parallel
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(try_fetch_icon, url) for url in urls]
-        for future in as_completed(futures):
-            url, content = future.result()
-            print(url)
-            if content:
-                item_data["icon"] = url
-                item_data["content"] = content
-                break
+    for url in urls:
+        print(url)
+        item_data["icon"], item_data["content"] = try_fetch_icon(url)
+        if item_data["content"]:
+            break
     
     if not item_data["content"]:
         print(f"❌ No icon found for {item}")
