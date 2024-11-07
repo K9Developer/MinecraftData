@@ -44,11 +44,11 @@ def load_language_file(client_url):
 
 def try_fetch_icon(url):
     # try:
-    response = session.get(url, timeout=TIMEOUT)
+    response = session.get(url)
     if response.status_code == 200:
         return url, response.content
     else:
-        print(url)
+        print(url, response.status_code, response.content)
     # except requests.exceptions.RequestException:
     #     pass
     return None, None
