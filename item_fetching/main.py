@@ -44,12 +44,14 @@ def load_language_file(client_url):
 
 def try_fetch_icon(url):
     # try:
-        response = session.get(url, timeout=TIMEOUT)
-        if response.status_code == 200:
-            return url, response.content
+    response = session.get(url, timeout=TIMEOUT)
+    if response.status_code == 200:
+        return url, response.content
+    else:
+        print(url)
     # except requests.exceptions.RequestException:
     #     pass
-    # return None, None
+    return None, None
 
 def fetch_item_parallel(args):
     item, item_keys, total_items, current_item = args
