@@ -43,12 +43,13 @@ def load_language_file(client_url):
             if k.startswith(("item.minecraft.", "block.minecraft."))}
 
 def try_fetch_icon(url):
-    try:
+    # try:
         response = session.get(url, timeout=TIMEOUT)
         if response.status_code == 200:
             return url, response.content
-    except requests.exceptions.RequestException:
-        return None, None
+    # except requests.exceptions.RequestException:
+    #     pass
+    # return None, None
 
 def fetch_item_parallel(args):
     item, item_keys, total_items, current_item = args
