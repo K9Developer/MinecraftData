@@ -28,7 +28,7 @@ jobs:
         pip install bs4
 
     - name: Create enchantment directory
-      run: mkdir -p datapack_enchantment
+      run: mkdir -p enchanting_data
 
     - name: Run items script
       run: |
