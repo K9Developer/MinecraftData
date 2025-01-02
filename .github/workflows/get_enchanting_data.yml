@@ -50,6 +50,17 @@ jobs:
             return result
         
         URL = "https://minecraft.fandom.com/wiki/Anvil_mechanics"
+        item_map = {
+            "Netherite Axe": [ "Netherite Axe", "Diamond Axe", "Iron Axe", "Stone Axe", "Wooden Axe" ],
+            "Netherite Hoe": [ "Netherite Hoe", "Diamond Hoe", "Iron Hoe", "Stone Hoe", "Wooden Hoe" ],
+            "Netherite Pickaxe": [ "Netherite Pickaxe", "Diamond Pickaxe", "Iron Pickaxe", "Stone Pickaxe", "Wooden Pickaxe" ],
+            "Netherite Shovel": [ "Netherite Shovel", "Diamond Shovel", "Iron Shovel", "Stone Shovel", "Wooden Shovel" ],
+            "Netherite Sword": [ "Netherite Sword", "Diamond Sword", "Iron Sword", "Stone Sword", "Wooden Sword" ],
+            "Netherite Helmet": [ "Netherite Helmet", "Diamond Helmet", "Iron Helmet", "Chainmail Helmet", "Leather Cap" ],
+            "Netherite Chestplate": [ "Netherite Chestplate", "Diamond Chestplate", "Iron Chestplate", "Chainmail Chestplate", "Leather Tunic" ],
+            "Netherite Leggings": [ "Netherite Leggings", "Diamond Leggings", "Iron Leggings", "Chainmail Leggings", "Leather Pants" ],
+            "Netherite Boots": [ "Netherite Boots", "Diamond Boots", "Iron Boots", "Chainmail Boots", "Leather Boots" ],
+        }
         response = requests.get(URL)
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         table = soup.find("table", {"data-description": "Enchantment cost multipliers"})
@@ -65,7 +76,15 @@ jobs:
             enchantment = cols[1].find("a")["title"].strip()
             max_level = roman_to_int(cols[2].text.strip())
             book_multiplier = int(''.join([a for a in cols[5].contents[0] if a.isdigit()]))
+        
+            item_list = []
             for item in applies_to_items:
+                if item in item_map:
+                    item_list.extend(item_map[item])
+                else:
+                    item_list.append(item)
+        
+            for item in item_list:
                 items[item] = items.get(item, {})
                 items[item][enchantment] = {
                     "max_level": max_level,
