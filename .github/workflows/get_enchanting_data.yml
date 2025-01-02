@@ -1,0 +1,89 @@
+name: Get Enchanting Data
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  get_items:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+        pip install bs4
+
+    - name: Create enchantment directory
+      run: mkdir -p datapack_enchantment
+
+    - name: Run items script
+      run: |
+        cat << EOT > get_ench.py
+        import bs4
+        import requests
+        import json
+        
+        def roman_to_int(s):
+            roman = {"I": 1,"V": 5,"X": 10,"L": 50,"C": 100,"D": 500,"M": 1000}
+            result = 0
+            last = 0
+            for c in s:
+                if roman[c] > last:
+                    result += roman[c] - 2 * last
+                else:
+                    result += roman[c]
+                last = roman[c]
+            return result
+        
+        URL = "https://minecraft.fandom.com/wiki/Anvil_mechanics"
+        response = requests.get(URL)
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        table = soup.find("table", {"data-description": "Enchantment cost multipliers"})
+        if table is None:
+            raise ValueError("Table with data-description 'Enchantment cost multipliers' not found")
+        
+        items = {}
+        rows = table.find_all("tr")[2:]
+        for row in rows:
+            cols = row.find_all("td")
+            applies_to_items = [item["title"].strip() for item in cols[3].find_all("a")]
+            
+            enchantment = cols[1].find("a")["title"].strip()
+            max_level = roman_to_int(cols[2].text.strip())
+            book_multiplier = int(''.join([a for a in cols[5].contents[0] if a.isdigit()]))
+            for item in applies_to_items:
+                items[item] = items.get(item, {})
+                items[item][enchantment] = {
+                    "max_level": max_level,
+                    "level_multiplier": book_multiplier
+                }
+        
+        with open("enchanting_data/enchanting_data.json", "w") as f:
+            json.dump(items, f, indent=4)
+
+        EOT
+        python get_ench.py
+
+    - name: Commit and push changes
+      env:
+        PAT: ${{ secrets.PAT }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add enchanting_data/
+        git commit -m "Update enchanting data" -a || echo "No changes to commit"
+        git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
