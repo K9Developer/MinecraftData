@@ -45,7 +45,343 @@
             "level_multiplier": 4
         }
     },
+    "Diamond Helmet": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Helmet": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Chainmail Helmet": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Leather Cap": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
     "Netherite Chestplate": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Diamond Chestplate": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Chestplate": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Chainmail Chestplate": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Leather Tunic": {
         "Protection": {
             "max_level": 4,
             "level_multiplier": 1
@@ -125,7 +461,391 @@
             "level_multiplier": 4
         }
     },
+    "Diamond Leggings": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Swift Sneak": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Leggings": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Swift Sneak": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Chainmail Leggings": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Swift Sneak": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Leather Pants": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Swift Sneak": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
     "Netherite Boots": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Feather Falling": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Depth Strider": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Frost Walker": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Soul Speed": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Diamond Boots": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Feather Falling": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Depth Strider": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Frost Walker": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Soul Speed": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Boots": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Feather Falling": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Depth Strider": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Frost Walker": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Soul Speed": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Chainmail Boots": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Feather Falling": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Depth Strider": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Frost Walker": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Soul Speed": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Leather Boots": {
         "Protection": {
             "max_level": 4,
             "level_multiplier": 1
@@ -267,7 +987,327 @@
             "level_multiplier": 2
         }
     },
+    "Diamond Sword": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Knockback": {
+            "max_level": 2,
+            "level_multiplier": 1
+        },
+        "Fire Aspect": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Looting": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Sweeping Edge": {
+            "max_level": 3,
+            "level_multiplier": 2
+        }
+    },
+    "Iron Sword": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Knockback": {
+            "max_level": 2,
+            "level_multiplier": 1
+        },
+        "Fire Aspect": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Looting": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Sweeping Edge": {
+            "max_level": 3,
+            "level_multiplier": 2
+        }
+    },
+    "Stone Sword": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Knockback": {
+            "max_level": 2,
+            "level_multiplier": 1
+        },
+        "Fire Aspect": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Looting": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Sweeping Edge": {
+            "max_level": 3,
+            "level_multiplier": 2
+        }
+    },
+    "Wooden Sword": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Knockback": {
+            "max_level": 2,
+            "level_multiplier": 1
+        },
+        "Fire Aspect": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Looting": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Sweeping Edge": {
+            "max_level": 3,
+            "level_multiplier": 2
+        }
+    },
     "Netherite Axe": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Diamond Axe": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Axe": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Stone Axe": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Wooden Axe": {
         "Sharpness": {
             "max_level": 5,
             "level_multiplier": 1
@@ -331,6 +1371,110 @@
             "level_multiplier": 4
         }
     },
+    "Diamond Pickaxe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Pickaxe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Stone Pickaxe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Wooden Pickaxe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
     "Netherite Shovel": {
         "Efficiency": {
             "max_level": 5,
@@ -357,7 +1501,215 @@
             "level_multiplier": 4
         }
     },
+    "Diamond Shovel": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Shovel": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Stone Shovel": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Wooden Shovel": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
     "Netherite Hoe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Diamond Hoe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Iron Hoe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Stone Hoe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Wooden Hoe": {
         "Efficiency": {
             "max_level": 5,
             "level_multiplier": 1
