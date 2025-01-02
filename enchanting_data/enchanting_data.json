@@ -1,0 +1,646 @@
+{
+    "Netherite Helmet": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Chestplate": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Leggings": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Swift Sneak": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Boots": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Feather Falling": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Depth Strider": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Frost Walker": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Soul Speed": {
+            "max_level": 3,
+            "level_multiplier": 4
+        }
+    },
+    "Turtle Helmet": {
+        "Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Fire Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Blast Protection": {
+            "max_level": 4,
+            "level_multiplier": 2
+        },
+        "Projectile Protection": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Thorns": {
+            "max_level": 3,
+            "level_multiplier": 4
+        },
+        "Respiration": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Aqua Affinity": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Sword": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Knockback": {
+            "max_level": 2,
+            "level_multiplier": 1
+        },
+        "Fire Aspect": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Looting": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Sweeping Edge": {
+            "max_level": 3,
+            "level_multiplier": 2
+        }
+    },
+    "Netherite Axe": {
+        "Sharpness": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Smite": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Bane of Arthropods": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Pickaxe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Shovel": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Netherite Hoe": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Fortune": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Shears": {
+        "Efficiency": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Bedrock Edition": {
+        "Silk Touch": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Fishing Rod": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Luck of the Sea": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Lure": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Bow": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Power": {
+            "max_level": 5,
+            "level_multiplier": 1
+        },
+        "Punch": {
+            "max_level": 2,
+            "level_multiplier": 2
+        },
+        "Flame": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Infinity": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Flint and Steel": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Carrot on a Stick": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Warped Fungus on a Stick": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Shield": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Elytra": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Trident": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Impaling": {
+            "max_level": 5,
+            "level_multiplier": 2
+        },
+        "Riptide": {
+            "max_level": 3,
+            "level_multiplier": 2
+        },
+        "Loyalty": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Channeling": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Crossbow": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Multishot": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Piercing": {
+            "max_level": 4,
+            "level_multiplier": 1
+        },
+        "Quick Charge": {
+            "max_level": 3,
+            "level_multiplier": 1
+        }
+    },
+    "Brush": {
+        "Unbreaking": {
+            "max_level": 3,
+            "level_multiplier": 1
+        },
+        "Mending": {
+            "max_level": 1,
+            "level_multiplier": 2
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Carved Pumpkin": {
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Head": {
+        "Curse of Binding": {
+            "max_level": 1,
+            "level_multiplier": 4
+        },
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Compass": {
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    },
+    "Recovery Compass": {
+        "Curse of Vanishing": {
+            "max_level": 1,
+            "level_multiplier": 4
+        }
+    }
+}
