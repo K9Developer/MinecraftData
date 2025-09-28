@@ -1,108 +1,108 @@
-name: Get Enchanting Data
+# name: Get Enchanting Data
 
-on:
-  schedule:
-    - cron: '0 0 * * *'  # Run daily at midnight UTC
-  workflow_dispatch:  # Allow manual triggering
+# on:
+#   schedule:
+#     - cron: '0 0 * * *'  # Run daily at midnight UTC
+#   workflow_dispatch:  # Allow manual triggering
 
-jobs:
-  get_items:
-    runs-on: ubuntu-latest
+# jobs:
+#   get_items:
+#     runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.PAT }}
-        fetch-depth: 0
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v3
+#       with:
+#         token: ${{ secrets.PAT }}
+#         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-        pip install bs4
+#     - name: Install dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install requests
+#         pip install bs4
 
-    - name: Create enchantment directory
-      run: mkdir -p enchanting_data
+#     - name: Create enchantment directory
+#       run: mkdir -p enchanting_data
 
-    - name: Run items script
-      run: |
-        cat << EOT > get_ench.py
-        import bs4
-        import requests
-        import json
+#     - name: Run items script
+#       run: |
+#         cat << EOT > get_ench.py
+#         import bs4
+#         import requests
+#         import json
         
-        def roman_to_int(s):
-            roman = {"I": 1,"V": 5,"X": 10,"L": 50,"C": 100,"D": 500,"M": 1000}
-            result = 0
-            last = 0
-            for c in s:
-                if roman[c] > last:
-                    result += roman[c] - 2 * last
-                else:
-                    result += roman[c]
-                last = roman[c]
-            return result
+#         def roman_to_int(s):
+#             roman = {"I": 1,"V": 5,"X": 10,"L": 50,"C": 100,"D": 500,"M": 1000}
+#             result = 0
+#             last = 0
+#             for c in s:
+#                 if roman[c] > last:
+#                     result += roman[c] - 2 * last
+#                 else:
+#                     result += roman[c]
+#                 last = roman[c]
+#             return result
         
-        URL = "https://minecraft.fandom.com/wiki/Anvil_mechanics"
-        item_map = {
-            "Netherite Axe": [ "Netherite Axe", "Diamond Axe", "Iron Axe", "Stone Axe", "Wooden Axe" ],
-            "Netherite Hoe": [ "Netherite Hoe", "Diamond Hoe", "Iron Hoe", "Stone Hoe", "Wooden Hoe" ],
-            "Netherite Pickaxe": [ "Netherite Pickaxe", "Diamond Pickaxe", "Iron Pickaxe", "Stone Pickaxe", "Wooden Pickaxe" ],
-            "Netherite Shovel": [ "Netherite Shovel", "Diamond Shovel", "Iron Shovel", "Stone Shovel", "Wooden Shovel" ],
-            "Netherite Sword": [ "Netherite Sword", "Diamond Sword", "Iron Sword", "Stone Sword", "Wooden Sword" ],
-            "Netherite Helmet": [ "Netherite Helmet", "Diamond Helmet", "Iron Helmet", "Chainmail Helmet", "Leather Cap" ],
-            "Netherite Chestplate": [ "Netherite Chestplate", "Diamond Chestplate", "Iron Chestplate", "Chainmail Chestplate", "Leather Tunic" ],
-            "Netherite Leggings": [ "Netherite Leggings", "Diamond Leggings", "Iron Leggings", "Chainmail Leggings", "Leather Pants" ],
-            "Netherite Boots": [ "Netherite Boots", "Diamond Boots", "Iron Boots", "Chainmail Boots", "Leather Boots" ],
-        }
-        response = requests.get(URL)
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        table = soup.find("table", {"data-description": "Enchantment cost multipliers"})
-        if table is None:
-            raise ValueError("Table with data-description 'Enchantment cost multipliers' not found")
+#         URL = "https://minecraft.fandom.com/wiki/Anvil_mechanics"
+#         item_map = {
+#             "Netherite Axe": [ "Netherite Axe", "Diamond Axe", "Iron Axe", "Stone Axe", "Wooden Axe" ],
+#             "Netherite Hoe": [ "Netherite Hoe", "Diamond Hoe", "Iron Hoe", "Stone Hoe", "Wooden Hoe" ],
+#             "Netherite Pickaxe": [ "Netherite Pickaxe", "Diamond Pickaxe", "Iron Pickaxe", "Stone Pickaxe", "Wooden Pickaxe" ],
+#             "Netherite Shovel": [ "Netherite Shovel", "Diamond Shovel", "Iron Shovel", "Stone Shovel", "Wooden Shovel" ],
+#             "Netherite Sword": [ "Netherite Sword", "Diamond Sword", "Iron Sword", "Stone Sword", "Wooden Sword" ],
+#             "Netherite Helmet": [ "Netherite Helmet", "Diamond Helmet", "Iron Helmet", "Chainmail Helmet", "Leather Cap" ],
+#             "Netherite Chestplate": [ "Netherite Chestplate", "Diamond Chestplate", "Iron Chestplate", "Chainmail Chestplate", "Leather Tunic" ],
+#             "Netherite Leggings": [ "Netherite Leggings", "Diamond Leggings", "Iron Leggings", "Chainmail Leggings", "Leather Pants" ],
+#             "Netherite Boots": [ "Netherite Boots", "Diamond Boots", "Iron Boots", "Chainmail Boots", "Leather Boots" ],
+#         }
+#         response = requests.get(URL)
+#         soup = bs4.BeautifulSoup(response.text, "html.parser")
+#         table = soup.find("table", {"data-description": "Enchantment cost multipliers"})
+#         if table is None:
+#             raise ValueError("Table with data-description 'Enchantment cost multipliers' not found")
         
-        items = {}
-        rows = table.find_all("tr")[2:]
-        for row in rows:
-            cols = row.find_all("td")
-            applies_to_items = [item["title"].strip() for item in cols[3].find_all("a")]
+#         items = {}
+#         rows = table.find_all("tr")[2:]
+#         for row in rows:
+#             cols = row.find_all("td")
+#             applies_to_items = [item["title"].strip() for item in cols[3].find_all("a")]
             
-            enchantment = cols[1].find("a")["title"].strip()
-            max_level = roman_to_int(cols[2].text.strip())
-            book_multiplier = int(''.join([a for a in cols[5].contents[0] if a.isdigit()]))
+#             enchantment = cols[1].find("a")["title"].strip()
+#             max_level = roman_to_int(cols[2].text.strip())
+#             book_multiplier = int(''.join([a for a in cols[5].contents[0] if a.isdigit()]))
         
-            item_list = []
-            for item in applies_to_items:
-                if item in item_map:
-                    item_list.extend(item_map[item])
-                else:
-                    item_list.append(item)
+#             item_list = []
+#             for item in applies_to_items:
+#                 if item in item_map:
+#                     item_list.extend(item_map[item])
+#                 else:
+#                     item_list.append(item)
         
-            for item in item_list:
-                items[item] = items.get(item, {})
-                items[item][enchantment] = {
-                    "max_level": max_level,
-                    "level_multiplier": book_multiplier
-                }
+#             for item in item_list:
+#                 items[item] = items.get(item, {})
+#                 items[item][enchantment] = {
+#                     "max_level": max_level,
+#                     "level_multiplier": book_multiplier
+#                 }
         
-        with open("enchanting_data/enchanting_data.json", "w") as f:
-            json.dump(items, f, indent=4)
+#         with open("enchanting_data/enchanting_data.json", "w") as f:
+#             json.dump(items, f, indent=4)
 
-        EOT
-        python get_ench.py
+#         EOT
+#         python get_ench.py
 
-    - name: Commit and push changes
-      env:
-        PAT: ${{ secrets.PAT }}
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add enchanting_data/
-        git commit -m "Update enchanting data" -a || echo "No changes to commit"
-        git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
+#     - name: Commit and push changes
+#       env:
+#         PAT: ${{ secrets.PAT }}
+#       run: |
+#         git config --local user.email "action@github.com"
+#         git config --local user.name "GitHub Action"
+#         git add enchanting_data/
+#         git commit -m "Update enchanting data" -a || echo "No changes to commit"
+#         git push https://${PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
